@@ -15,25 +15,53 @@ interface MockStorage {
   ref: (path: string) => any
 }
 
+let mockCurrentUser: any = null
+const authStateCallbacks: ((user: any) => void)[] = []
+
+const notifyAuthStateChange = (user: any) => {
+  mockCurrentUser = user
+  authStateCallbacks.forEach((callback) => {
+    if (typeof callback === "function") {
+      callback(user)
+    }
+  })
+}
+
 // Mock Firebase services for development
 export const auth: MockAuth = {
-  currentUser: null,
+  get currentUser() {
+    return mockCurrentUser
+  },
   signInWithEmailAndPassword: async (email: string, password: string) => {
-    console.log("[v0] Mock sign in:", email)
-    return { user: { uid: "mock-user-id", email } }
+    console.log("[v0] Mock sign in:", { currentUser: null })
+    const user = { uid: "mock-user-id", email }
+    setTimeout(() => notifyAuthStateChange(user), 100)
+    return { user }
   },
   createUserWithEmailAndPassword: async (email: string, password: string) => {
-    console.log("[v0] Mock sign up:", email)
-    return { user: { uid: "mock-user-id", email } }
+    console.log("[v0] Mock sign up:", { currentUser: null })
+    const user = { uid: "mock-user-id", email }
+    setTimeout(() => notifyAuthStateChange(user), 100)
+    return { user }
   },
   signOut: async () => {
     console.log("[v0] Mock sign out")
+    notifyAuthStateChange(null)
   },
   onAuthStateChanged: (callback: (user: any) => void) => {
     console.log("[v0] Mock auth state changed")
-    // Simulate no user initially
-    setTimeout(() => callback(null), 100)
-    return () => {}
+    if (typeof callback === "function") {
+      authStateCallbacks.push(callback)
+      // Call immediately with current user state
+      setTimeout(() => callback(mockCurrentUser), 100)
+    }
+
+    return () => {
+      const index = authStateCallbacks.indexOf(callback)
+      if (index > -1) {
+        authStateCallbacks.splice(index, 1)
+      }
+    }
   },
 }
 
@@ -46,6 +74,19 @@ export const db: MockDb = {
       },
       get: async () => {
         console.log("[v0] Mock Firestore get:", name, id)
+        if (name === "farmers" && id === "mock-user-id") {
+          return Promise.resolve({
+            exists: true,
+            data: () => ({
+              phone: "+250788123456",
+              district: "Kigali",
+              farmSize: 2.5,
+              primaryCrops: ["maize", "beans", "irish_potato"],
+              profileComplete: true,
+              registrationDate: new Date(),
+            }),
+          })
+        }
         return Promise.resolve({ exists: false, data: () => null })
       },
       update: async (data: any) => {

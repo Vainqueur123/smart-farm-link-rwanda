@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Sprout } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { useTranslation } from "react-i18next"
+import { useTranslation } from "@/lib/i18n"
+import { LanguageSwitcher } from "@/components/language-switcher"
 
 export default function SignInPage() {
   const [email, setEmail] = useState("")
@@ -30,7 +31,9 @@ export default function SignInPage() {
 
     try {
       await signIn(email, password)
-      router.push("/dashboard")
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 500)
     } catch (error: any) {
       setError(error.message || "Failed to sign in")
     } finally {
@@ -40,6 +43,10 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
+
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -48,7 +55,7 @@ export default function SignInPage() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">{t("signIn")}</CardTitle>
-          <CardDescription>Enter your credentials to access your farm dashboard</CardDescription>
+          <CardDescription>{t("Enter your credentials to access your farm dashboard")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -91,7 +98,7 @@ export default function SignInPage() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
+              {t("Don't have an account?")}{" "}
               <Link href="/auth/signup" className="text-green-600 hover:text-green-700 font-medium">
                 {t("signUp")}
               </Link>

@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Sprout } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { useTranslation } from "react-i18next"
+import { useTranslation } from "@/lib/i18n"
+import { LanguageSwitcher } from "@/components/language-switcher"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -30,22 +31,24 @@ export default function SignUpPage() {
     setError("")
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
+      setError(t("Passwords do not match"))
       setLoading(false)
       return
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters")
+      setError(t("Password must be at least 6 characters"))
       setLoading(false)
       return
     }
 
     try {
       await signUp(email, password)
-      router.push("/onboarding")
+      setTimeout(() => {
+        router.push("/onboarding")
+      }, 500)
     } catch (error: any) {
-      setError(error.message || "Failed to create account")
+      setError(error.message || t("Failed to create account"))
     } finally {
       setLoading(false)
     }
@@ -53,6 +56,10 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
+
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -61,7 +68,7 @@ export default function SignUpPage() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">{t("signUp")}</CardTitle>
-          <CardDescription>Create your account to start smart farming</CardDescription>
+          <CardDescription>{t("Create your account to start smart farming")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,7 +96,7 @@ export default function SignUpPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Minimum 6 characters"
+                placeholder={t("Minimum 6 characters")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -117,7 +124,7 @@ export default function SignUpPage() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Already have an account?{" "}
+              {t("Already have an account?")}{" "}
               <Link href="/auth/signin" className="text-green-600 hover:text-green-700 font-medium">
                 {t("signIn")}
               </Link>

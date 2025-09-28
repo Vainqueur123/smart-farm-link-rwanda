@@ -14,22 +14,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Home, Sprout, ShoppingCart, CreditCard, Settings, User, LogOut, Menu, Bell, Globe } from "lucide-react"
+import { Home, Sprout, ShoppingCart, CreditCard, Settings, User, LogOut, Menu, Bell } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useTranslation } from "@/lib/i18n"
 import { VoiceAssistant } from "@/components/voice-assistant"
 import { OfflineIndicator } from "@/components/offline-indicator"
+import { LanguageSwitcher } from "@/components/language-switcher"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "My Farm", href: "/farm", icon: Sprout },
-  { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
+  { name: "dashboard", href: "/dashboard", icon: Home },
+  { name: "myFarm", href: "/farm", icon: Sprout },
+  { name: "marketplace", href: "/marketplace", icon: ShoppingCart },
   { name: "Transactions", href: "/transactions", icon: CreditCard },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "settings", href: "/settings", icon: Settings },
 ]
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -37,16 +38,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, farmerProfile, logout } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const { t, currentLanguage, setLanguage } = useTranslation()
+  const { t } = useTranslation()
 
   const handleSignOut = async () => {
     await logout()
     router.push("/")
-  }
-
-  const toggleLanguage = () => {
-    const newLang = currentLanguage === "en" ? "rw" : "en"
-    setLanguage(newLang)
   }
 
   const handleVoiceCommand = (command: string, language: string) => {
@@ -173,11 +169,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
             <div className="flex flex-1"></div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
-              {/* Language toggle */}
-              <Button variant="ghost" size="sm" onClick={toggleLanguage}>
-                <Globe className="h-4 w-4 mr-2" />
-                {currentLanguage === "en" ? "RW" : "EN"}
-              </Button>
+              <LanguageSwitcher />
 
               {/* Notifications */}
               <Button variant="ghost" size="sm">
@@ -194,20 +186,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t("profile")}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
                     <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                    <span>{t("profile")}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+                    <span>{t("settings")}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sign out</span>
+                    <span>{t("signOut")}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
