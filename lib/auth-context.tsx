@@ -21,10 +21,11 @@ interface AuthContextType {
   farmerProfile: FarmerProfile | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string, userType: 'farmer' | 'buyer') => Promise<void>
   logout: () => Promise<void>
   updateProfile: (profile: Partial<FarmerProfile>) => Promise<void>
   refreshProfile: () => Promise<void>
+  checkAccountExists: (email: string) => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -61,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Provide a sensible default profile in mock mode so the app is usable after login
         const defaultProfile: FarmerProfile = {
           id: userId,
+          name: user?.displayName || "Demo Farmer",
           phone: "0780000000",
           district: "Kicukiro",
           sector: "Kagarama",
@@ -82,12 +84,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(email, password)
+  const checkAccountExists = async (email: string): Promise<boolean> => {
+    try {
+      // In a real app, this would check Firebase Auth or your database
+      // For mock purposes, we'll simulate checking existing accounts
+      const existingAccounts = [
+        'demo@smartfarm.rw',
+        'farmer@example.com',
+        'buyer@example.com'
+      ]
+      return existingAccounts.includes(email.toLowerCase())
+    } catch (error) {
+      console.error("Error checking account existence:", error)
+      return false
+    }
   }
 
-  const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(email, password)
+  const signIn = async (email: string, password: string) => {
+    console.log("[AuthContext] Sign in called with:", email)
+    try {
+      // First check if account exists
+      const accountExists = await checkAccountExists(email)
+      if (!accountExists) {
+        throw new Error("Account does not exist")
+      }
+      
+      await signInWithEmailAndPassword(email, password)
+      console.log("[AuthContext] Sign in successful")
+    } catch (error: any) {
+      console.error("[AuthContext] Sign in error:", error)
+      if (error.message === "Account does not exist") {
+        throw new Error("Account does not exist")
+      }
+      throw new Error("Invalid credentials")
+    }
+  }
+
+  const signUp = async (email: string, password: string, userType: 'farmer' | 'buyer') => {
+    try {
+      // Check if account already exists
+      const accountExists = await checkAccountExists(email)
+      if (accountExists) {
+        throw new Error("Account already exists")
+      }
+      
+      await createUserWithEmailAndPassword(email, password)
+      
+      // Store user type in a mock database
+      // In a real app, this would be stored in Firestore
+      console.log(`User ${email} signed up as ${userType}`)
+    } catch (error: any) {
+      if (error.message === "Account already exists") {
+        throw new Error("Account already exists")
+      }
+      throw error
+    }
   }
 
   const logout = async () => {
@@ -117,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     updateProfile,
     refreshProfile,
+    checkAccountExists,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

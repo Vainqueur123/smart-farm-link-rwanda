@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, TrendingUp, MapPin, Phone, Star, Plus } from "lucide-react"
 import { DISTRICTS } from "@/lib/districts"
 import { useTranslation } from "@/lib/i18n"
+import { PricingInsights } from "@/components/pricing-insights"
+import { BuyerNetwork } from "@/components/buyer-network"
+import { ProductCatalog } from "@/components/product-catalog"
 
 interface MarketListing {
   id: string
@@ -207,9 +210,11 @@ export default function MarketplacePage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="browse">{t("Browse Listings")}</TabsTrigger>
             <TabsTrigger value="prices">{t("Market Prices")}</TabsTrigger>
+            <TabsTrigger value="buyers">{t("Buyer Network")}</TabsTrigger>
+            <TabsTrigger value="catalog">{t("Product Catalog")}</TabsTrigger>
             <TabsTrigger value="my-listings">{t("My Listings")}</TabsTrigger>
           </TabsList>
 
@@ -337,6 +342,12 @@ export default function MarketplacePage() {
           </TabsContent>
 
           <TabsContent value="prices" className="space-y-6">
+            {/* Pricing Insights */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PricingInsights crop="maize" district="Kigali" currentPrice={350} />
+              <PricingInsights crop="irish_potato" district="Musanze" currentPrice={280} />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {marketPrices.map((price) => (
                 <Card key={`${price.crop}-${price.district}`}>
@@ -400,6 +411,14 @@ export default function MarketplacePage() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="buyers" className="space-y-6">
+            <BuyerNetwork farmerDistrict={user?.district} />
+          </TabsContent>
+
+          <TabsContent value="catalog" className="space-y-6">
+            <ProductCatalog selectedCrop={selectedCrop} />
           </TabsContent>
 
           <TabsContent value="my-listings" className="space-y-6">

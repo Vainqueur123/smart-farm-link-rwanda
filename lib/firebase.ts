@@ -45,7 +45,11 @@ export const auth: MockAuth = {
     // Support (auth, email, password) or (email, password)
     const email = args.length === 3 ? args[1] : args[0]
     console.log("[v0] Mock sign in:", email)
-    const user = { uid: "mock-user-id", email }
+    const user = { 
+      uid: "mock-user-id", 
+      email,
+      displayName: email === "demo@smartfarm.rw" ? "Demo Farmer" : "User"
+    }
     auth.currentUser = user
     // Notify listeners about sign-in
     notifyAuthSubscribers(user)
@@ -54,7 +58,11 @@ export const auth: MockAuth = {
   createUserWithEmailAndPassword: async (...args: any[]) => {
     const email = args.length === 3 ? args[1] : args[0]
     console.log("[v0] Mock sign up:", email)
-    const user = { uid: "mock-user-id", email }
+    const user = { 
+      uid: "mock-user-id", 
+      email,
+      displayName: "New User"
+    }
     auth.currentUser = user
     // Notify listeners about sign-up (treated as signed-in)
     notifyAuthSubscribers(user)

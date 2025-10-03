@@ -49,6 +49,7 @@ export default function OnboardingPage() {
 
   // Form data
   const [formData, setFormData] = useState({
+    name: "",
     phone: "",
     district: "" as DistrictCode,
     sector: "",
@@ -194,6 +195,16 @@ export default function OnboardingPage() {
             {/* Step 1: Personal Info */}
             {currentStep === 1 && (
               <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">{t("fullName")}</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder={t("Enter your full name")}
+                    value={formData.name}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
                 <div>
                   <Label htmlFor="phone">{t("phoneNumber")}</Label>
                   <Input
