@@ -1,6 +1,6 @@
 import type { DistrictProfile, DistrictCode, Province, CropType } from "./types"
 
-export const DISTRICTS: Record<DistrictCode, DistrictProfile> = {
+export const DISTRICTS: Partial<Record<DistrictCode, DistrictProfile>> = {
   // Kigali Province
   Nyarugenge: {
     id: "Nyarugenge",
@@ -216,8 +216,73 @@ export const DISTRICTS: Record<DistrictCode, DistrictProfile> = {
   // Note: In production, all 30 districts would be included
 } as const
 
+// Complete district lists by province
+const PROVINCE_DISTRICTS: Record<Province, DistrictCode[]> = {
+  Kigali: ["Gasabo", "Kicukiro", "Nyarugenge"],
+  Eastern: ["Bugesera", "Gatsibo", "Kayonza", "Kirehe", "Ngoma", "Nyagatare", "Rwamagana"],
+  Northern: ["Burera", "Gakenke", "Gicumbi", "Musanze", "Rulindo"],
+  Southern: ["Gisagara", "Huye", "Kamonyi", "Muhanga", "Nyamagabe", "Nyanza", "Nyaruguru", "Ruhango"],
+  Western: ["Karongi", "Ngororero", "Nyabihu", "Nyamasheke", "Rubavu", "Rusizi", "Rutsiro"],
+}
+
+const defaultProductivity: Record<CropType, number> = {
+  maize: 0,
+  beans: 0,
+  sorghum: 0,
+  sweet_potato: 0,
+  cassava: 0,
+  irish_potato: 0,
+  banana: 0,
+  coffee: 0,
+  tea: 0,
+  rice: 0,
+  wheat: 0,
+  groundnuts: 0,
+}
+
+const defaultVolatility: Record<CropType, number> = {
+  maize: 0.2,
+  beans: 0.2,
+  sorghum: 0.2,
+  sweet_potato: 0.2,
+  cassava: 0.2,
+  irish_potato: 0.2,
+  banana: 0.2,
+  coffee: 0.2,
+  tea: 0.2,
+  rice: 0.2,
+  wheat: 0.2,
+  groundnuts: 0.2,
+}
+
+const defaultCropsByProvince: Record<Province, CropType[]> = {
+  Kigali: ["beans", "maize", "banana"],
+  Eastern: ["maize", "beans", "sorghum", "cassava"],
+  Northern: ["irish_potato", "beans", "maize", "tea"],
+  Southern: ["coffee", "banana", "beans", "maize"],
+  Western: ["banana", "irish_potato", "tea", "coffee"],
+}
+
+const createDefaultDistrict = (id: DistrictCode, province: Province): DistrictProfile => ({
+  id,
+  name: id,
+  province,
+  coordinates: [0, 0],
+  population: 0,
+  farmingHouseholds: 0,
+  soilTypes: [],
+  climateZone: "",
+  recommendedCrops: defaultCropsByProvince[province],
+  marketDays: [],
+  averageIncome: 0,
+  povertyRate: 0,
+  cropProductivity: { ...defaultProductivity },
+  priceVolatility: { ...defaultVolatility },
+})
+
 export const getDistrictsByProvince = (province: Province): DistrictProfile[] => {
-  return Object.values(DISTRICTS).filter((district) => district.province === province)
+  const list = PROVINCE_DISTRICTS[province] || []
+  return list.map((code) => DISTRICTS[code] ?? createDefaultDistrict(code, province))
 }
 
 export const getRecommendedCropsForDistrict = (districtCode: DistrictCode): CropType[] => {
@@ -225,5 +290,10 @@ export const getRecommendedCropsForDistrict = (districtCode: DistrictCode): Crop
 }
 
 export const getDistrictProfile = (districtCode: DistrictCode): DistrictProfile | null => {
-  return DISTRICTS[districtCode] || null
+  const fromMap = DISTRICTS[districtCode]
+  if (fromMap) return fromMap
+  // Try to infer province membership
+  const province = (Object.entries(PROVINCE_DISTRICTS).find(([, codes]) => codes.includes(districtCode))?.[0] ||
+    null) as Province | null
+  return province ? createDefaultDistrict(districtCode, province) : null
 }

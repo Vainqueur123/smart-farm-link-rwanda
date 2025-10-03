@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Sprout } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { useTranslation } from "react-i18next"
+import { useTranslation } from "@/lib/i18n"
 
 export default function SignInPage() {
   const [email, setEmail] = useState("")
@@ -21,7 +21,7 @@ export default function SignInPage() {
   const [error, setError] = useState("")
   const { signIn } = useAuth()
   const router = useRouter()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,9 +48,14 @@ export default function SignInPage() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">{t("signIn")}</CardTitle>
-          <CardDescription>Enter your credentials to access your farm dashboard</CardDescription>
+          <CardDescription>{t("signinDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex justify-end mb-2">
+            <Button variant="ghost" size="sm" onClick={() => i18n.changeLanguage(i18n.language === "rw" ? "en" : "rw")}>
+              {i18n.language === "rw" ? "EN" : "RW"}
+            </Button>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">
@@ -91,7 +96,7 @@ export default function SignInPage() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
+              {t("noAccountQuestion")} {" "}
               <Link href="/auth/signup" className="text-green-600 hover:text-green-700 font-medium">
                 {t("signUp")}
               </Link>

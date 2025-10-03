@@ -15,6 +15,7 @@ import {
 import { Home, Sprout, ShoppingCart, CreditCard, Settings, User, LogOut, Menu, Bell, Globe } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useTranslation } from "@/lib/i18n"
+import { OfflineIndicator } from "@/components/offline-indicator"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -26,6 +27,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { t, i18n } = useTranslation()
+  const currentLanguage = i18n.language
+  const setLanguage = (lng: string) => i18n.changeLanguage(lng)
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "My Farm", href: "/farm", icon: Sprout },
@@ -33,13 +36,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Transactions", href: "/transactions", icon: CreditCard },
     { name: "Settings", href: "/settings", icon: Settings },
   ]
-  const setLanguage = (lng: string) => i18n.changeLanguage(lng)
-
   const handleSignOut = async () => {
     await logout()
     router.push("/")
   }
-{{ ... }}
+
   const toggleLanguage = () => {
     const newLang = currentLanguage === "en" ? "rw" : "en"
     setLanguage(newLang)
