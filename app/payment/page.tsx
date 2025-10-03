@@ -29,7 +29,7 @@ export default function PaymentPage() {
   // Mock listing data
   const listing = {
     id: listingId,
-    crop: "Maize",
+    crop: "maize",
     quantity: 500,
     unit: "kg",
     pricePerUnit: 350,
@@ -192,11 +192,11 @@ export default function PaymentPage() {
               <div className="flex items-center gap-3">
                 <img
                   src="/field-of-maize.png"
-                  alt={listing.crop}
+                  alt={t(listing.crop)}
                   className="w-15 h-15 rounded-lg object-cover"
                 />
                 <div className="flex-1">
-                  <h3 className="font-medium">{listing.crop}</h3>
+                  <h3 className="font-medium">{t(listing.crop)}</h3>
                   <p className="text-sm text-muted-foreground">
                     {listing.quantity} {listing.unit} × {listing.pricePerUnit.toLocaleString()} RWF
                   </p>

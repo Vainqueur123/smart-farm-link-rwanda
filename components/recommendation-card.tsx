@@ -1,8 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "@/lib/i18n"
 import type { LucideIcon } from "@/lib/lucide-react"
 
 interface RecommendationCardProps {
@@ -13,6 +15,9 @@ interface RecommendationCardProps {
 }
 
 export function RecommendationCard({ title, description, icon: Icon, type }: RecommendationCardProps) {
+  const { t } = useTranslation()
+  const [isAdviceOpen, setIsAdviceOpen] = useState(false)
+  const [question, setQuestion] = useState("")
   const getTypeColor = (type: string) => {
     switch (type) {
       case "seasonal":
@@ -71,13 +76,52 @@ export function RecommendationCard({ title, description, icon: Icon, type }: Rec
       <CardContent className="pt-0">
         <CardDescription className="text-sm mb-4">{description}</CardDescription>
         <div className="flex space-x-2">
-          <Button size="sm" variant="outline" className="flex-1 bg-transparent">
-            Learn More
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 bg-transparent"
+            onClick={() => setIsAdviceOpen(true)}
+          >
+            {t("Learn More")}
           </Button>
-          <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
-            Apply
+          <Button
+            size="sm"
+            className="flex-1 bg-green-600 hover:bg-green-700"
+            onClick={() => setIsAdviceOpen(true)}
+          >
+            {t("Apply")}
           </Button>
         </div>
+
+        {isAdviceOpen && (
+          <div className="mt-4 p-4 border rounded-lg bg-white shadow-sm">
+            <p className="text-sm font-medium mb-2">{t("Ask for advice")}</p>
+            <textarea
+              className="w-full border rounded-md p-2 text-sm mb-2"
+              rows={3}
+              placeholder={t("Type your farming question")}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setIsAdviceOpen(false)}>
+                {t("cancel")}
+              </Button>
+              <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => {
+                  console.log("[advice]", { type, title, question })
+                  setIsAdviceOpen(false)
+                  setQuestion("")
+                }}
+                disabled={!question.trim()}
+              >
+                {t("Send")}
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

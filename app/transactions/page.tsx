@@ -45,7 +45,7 @@ export default function TransactionsPage() {
         type: "purchase",
         amount: 175000,
         status: "completed",
-        crop: "Maize",
+        crop: "maize",
         quantity: 500,
         unit: "kg",
         otherParty: "Jean Baptiste Uwimana",
@@ -60,7 +60,7 @@ export default function TransactionsPage() {
         type: "sale",
         amount: 280000,
         status: "processing",
-        crop: "Irish Potatoes",
+        crop: "irish_potato",
         quantity: 1000,
         unit: "kg",
         otherParty: "Marie Claire Mukamana",
@@ -74,7 +74,7 @@ export default function TransactionsPage() {
         type: "purchase",
         amount: 240000,
         status: "pending",
-        crop: "Coffee",
+        crop: "coffee",
         quantity: 200,
         unit: "kg",
         otherParty: "Emmanuel Nzeyimana",
@@ -114,7 +114,17 @@ export default function TransactionsPage() {
       cancelled: "destructive",
     } as const
 
-    return <Badge variant={variants[status] || "outline"}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>
+    const label =
+      status === "completed"
+        ? t("Completed")
+        : status === "processing"
+        ? t("Processing")
+        : status === "pending"
+        ? t("Pending")
+        : status === "failed"
+        ? t("Failed")
+        : t("Cancelled")
+    return <Badge variant={variants[status] || "outline"}>{label}</Badge>
   }
 
   const getEscrowBadge = (escrowStatus?: Transaction["escrowStatus"]) => {
@@ -129,7 +139,7 @@ export default function TransactionsPage() {
     return (
       <Badge variant={variants[escrowStatus]} className="ml-2">
         <Shield className="h-3 w-3 mr-1" />
-        {escrowStatus === "holding" ? "Escrow" : escrowStatus.charAt(0).toUpperCase() + escrowStatus.slice(1)}
+        {escrowStatus === "holding" ? t("Escrow") : escrowStatus === "released" ? t("Released") : t("Refunded")}
       </Badge>
     )
   }
@@ -238,7 +248,7 @@ export default function TransactionsPage() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold">
-                              {transaction.type === "purchase" ? t("Purchased") : t("Sold")} {transaction.crop}
+                              {transaction.type === "purchase" ? t("Purchased") : t("Sold")} {t(transaction.crop)}
                             </h3>
                             {getStatusIcon(transaction.status)}
                           </div>
@@ -247,7 +257,7 @@ export default function TransactionsPage() {
                             {transaction.otherPartyDistrict}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(transaction.createdAt).toLocaleDateString()} • {transaction.paymentMethod}
+                            {new Date(transaction.createdAt).toLocaleDateString()} • {t(transaction.paymentMethod)}
                           </p>
                         </div>
                       </div>

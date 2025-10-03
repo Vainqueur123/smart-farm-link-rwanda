@@ -69,7 +69,7 @@ export default function MarketplacePage() {
         farmerPhone: "+250788123456",
         farmerDistrict: "Nyagatare",
         farmerSector: "Karangazi",
-        crop: "Maize",
+        crop: "maize",
         quantity: 500,
         unit: "kg",
         pricePerUnit: 350,
@@ -90,7 +90,7 @@ export default function MarketplacePage() {
         farmerPhone: "+250788234567",
         farmerDistrict: "Musanze",
         farmerSector: "Cyuve",
-        crop: "Irish Potatoes",
+        crop: "irish_potato",
         quantity: 1000,
         unit: "kg",
         pricePerUnit: 280,
@@ -111,7 +111,7 @@ export default function MarketplacePage() {
         farmerPhone: "+250788345678",
         farmerDistrict: "Huye",
         farmerSector: "Tumba",
-        crop: "Coffee",
+        crop: "coffee",
         quantity: 200,
         unit: "kg",
         pricePerUnit: 1200,
@@ -129,7 +129,7 @@ export default function MarketplacePage() {
 
     const mockPrices: MarketPrice[] = [
       {
-        crop: "Maize",
+        crop: "maize",
         district: "Nyagatare",
         currentPrice: 350,
         weeklyChange: 5.2,
@@ -139,7 +139,7 @@ export default function MarketplacePage() {
         trend: "up",
       },
       {
-        crop: "Irish Potatoes",
+        crop: "irish_potato",
         district: "Musanze",
         currentPrice: 280,
         weeklyChange: -2.1,
@@ -149,7 +149,7 @@ export default function MarketplacePage() {
         trend: "down",
       },
       {
-        crop: "Coffee",
+        crop: "coffee",
         district: "Huye",
         currentPrice: 1200,
         weeklyChange: 8.7,
@@ -175,7 +175,7 @@ export default function MarketplacePage() {
     return matchesSearch && matchesDistrict && matchesCrop
   })
 
-  const crops = ["Maize", "Irish Potatoes", "Coffee", "Beans", "Rice", "Cassava", "Sweet Potatoes", "Bananas"]
+  const crops = ["maize", "irish_potato", "coffee", "beans", "rice", "cassava", "sweet_potato", "banana"]
 
   const allDistricts = Object.values(DISTRICTS)
 
@@ -250,7 +250,7 @@ export default function MarketplacePage() {
                       <SelectItem value="all">{t("All Crops")}</SelectItem>
                       {crops.map((crop) => (
                         <SelectItem key={crop} value={crop}>
-                          {crop}
+                          {t(crop)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -283,7 +283,7 @@ export default function MarketplacePage() {
                     <div className="space-y-3">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="font-semibold text-lg">{listing.crop}</h3>
+                          <h3 className="font-semibold text-lg">{t(listing.crop)}</h3>
                           <p className="text-sm text-muted-foreground">
                             {listing.quantity} {listing.unit} available
                           </p>
@@ -292,7 +292,7 @@ export default function MarketplacePage() {
                           <p className="text-2xl font-bold text-green-600">
                             {listing.pricePerUnit.toLocaleString()} RWF
                           </p>
-                          <p className="text-xs text-muted-foreground">per {listing.unit}</p>
+                          <p className="text-xs text-muted-foreground">{t("per")} {listing.unit}</p>
                         </div>
                       </div>
 
