@@ -15,7 +15,7 @@ import { useAuth } from "@/lib/auth-context"
 import { getDistrictsByProvince } from "@/lib/districts"
 import type { DistrictCode, Province, CropType, Language } from "@/lib/types"
 import { doc, setDoc, db } from "@/lib/firebase"
-import { useTranslation } from "react-i18next"
+import { useTranslation } from "@/lib/i18n"
 
 const STEPS = [
   { id: 1, title: "Personal Info", icon: User },

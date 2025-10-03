@@ -1,10 +1,17 @@
 const translations = {
   en: {
-    // Navigation
+    // Navigation (lowercase keys)
     dashboard: "My Farm Dashboard",
     marketplace: "Marketplace",
     profile: "Profile",
     settings: "Settings",
+
+    // Navigation (capitalized UI labels used in components)
+    Dashboard: "Dashboard",
+    "My Farm": "My Farm",
+    Marketplace: "Marketplace",
+    Transactions: "Transactions",
+    Settings: "Settings",
 
     // Common
     welcome: "Welcome",
@@ -56,17 +63,25 @@ const translations = {
     groundnuts: "Groundnuts",
   },
   rw: {
-    // Navigation
+    // Navigation (lowercase keys)
     dashboard: "Ibikoresho by'Umurima Wanjye",
     marketplace: "Isoko",
     profile: "Umwirondoro",
     settings: "Igenamiterere",
 
+    // Navigation (capitalized UI labels used in components)
+    Dashboard: "Ikibaho",
+    "My Farm": "Umurima Wanjye",
+    Marketplace: "Isoko",
+    Transactions: "Imicungire y'Amafaranga",
+    Settings: "Igenamiterere",
+    "FarmLink RW": "FarmLink RW",
+
     // Common
     welcome: "Murakaza neza",
     loading: "Birashakisha...",
     save: "Bika",
-    cancel: "Kuraguza",
+    cancel: "Kuraho",
     continue: "Komeza",
     back: "Subira",
     next: "Ikurikira",
@@ -102,7 +117,7 @@ const translations = {
     beans: "Ibishyimbo",
     irish_potato: "Ibirayi",
     sweet_potato: "Ibijumba",
-    banana: "Amatooke",
+    banana: "Imitoke",
     coffee: "Ikawa",
     tea: "Icyayi",
     cassava: "Imyumbati",
@@ -111,26 +126,49 @@ const translations = {
     wheat: "Ingano",
     groundnuts: "Ubunyobwa",
   },
-}
+} as const
 
-let currentLanguage = "en"
+let currentLanguage: "en" | "rw" = "en"
+const subscribers = new Set<() => void>()
 
-// Mock useTranslation hook
+// Mock useTranslation hook (reactive)
 export const useTranslation = () => {
+  // Lightweight subscription to force re-render when language changes
+  // Use inline React import to avoid a hard dependency at module level
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require("react") as typeof import("react")
+  const [lang, setLang] = React.useState(currentLanguage)
+
+  React.useEffect(() => {
+    const cb = () => setLang(currentLanguage)
+    subscribers.add(cb)
+    return () => {
+      subscribers.delete(cb)
+    }
+  }, [])
+
   const t = (key: string) => {
-    const translation = translations[currentLanguage as keyof typeof translations]
-    return translation[key as keyof typeof translation] || key
+    const translation = translations[lang]
+    return (translation as any)[key] || key
   }
 
   const i18n = {
     changeLanguage: (lng: string) => {
-      console.log("[v0] Mock language change:", lng)
-      currentLanguage = lng
+      const next = (lng === "rw" ? "rw" : "en") as typeof currentLanguage
+      if (currentLanguage !== next) {
+        console.log("[v0] Mock language change:", next)
+        currentLanguage = next
+        subscribers.forEach((fn) => {
+          try {
+            fn()
+          } catch {}
+        })
+      }
     },
-    language: currentLanguage,
+    get language() {
+      return lang
+    },
   }
 
   return { t, i18n }
 }
-
-export default {}

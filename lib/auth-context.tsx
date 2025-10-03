@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(async (user: User | null) => {
       setUser(user)
       if (user) {
         await loadFarmerProfile(user.uid)
@@ -50,13 +50,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadFarmerProfile = async (userId: string) => {
     try {
-      const profileDoc = await getDoc(doc(db, "farmers", userId))
-      if (profileDoc.exists()) {
-        const data = profileDoc.data()
+      const profileDoc = await getDoc(doc(db, `farmers/${userId}`))
+      if (profileDoc && (profileDoc as any).exists) {
+        const data = typeof (profileDoc as any).data === "function" ? (profileDoc as any).data() : (profileDoc as any)
         setFarmerProfile({
           ...data,
-          registrationDate: data.registrationDate?.toDate() || new Date(),
+          registrationDate: data.registrationDate?.toDate?.() || data.registrationDate || new Date(),
         } as FarmerProfile)
+      } else {
+        // Provide a sensible default profile in mock mode so the app is usable after login
+        const defaultProfile: FarmerProfile = {
+          id: userId,
+          phone: "0780000000",
+          district: "Kicukiro",
+          sector: "Kagarama",
+          cell: "",
+          village: "",
+          language: "en",
+          farmSize: 1,
+          primaryCrops: ["maize", "beans"],
+          experienceLevel: "beginner",
+          hasSmartphone: true,
+          preferredContactMethod: "app",
+          registrationDate: new Date(),
+          profileComplete: true,
+        }
+        setFarmerProfile(defaultProfile)
       }
     } catch (error) {
       console.error("Error loading farmer profile:", error)
@@ -64,22 +83,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password)
+    await signInWithEmailAndPassword(email, password)
   }
 
   const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password)
+    await createUserWithEmailAndPassword(email, password)
   }
 
   const logout = async () => {
-    await signOut(auth)
+    await signOut()
   }
 
   const updateProfile = async (profileData: Partial<FarmerProfile>) => {
     if (!user) throw new Error("No authenticated user")
 
     const updatedProfile = { ...farmerProfile, ...profileData }
-    await updateDoc(doc(db, "farmers", user.uid), updatedProfile)
+    await updateDoc(doc(db, `farmers/${user.uid}`), updatedProfile)
     setFarmerProfile(updatedProfile as FarmerProfile)
   }
 

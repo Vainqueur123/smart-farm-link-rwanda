@@ -115,9 +115,24 @@ class OfflineService {
       const transaction = this.db!.transaction(["offline_data"], "readonly")
       const store = transaction.objectStore("offline_data")
       const index = store.index("synced")
-      const request = index.getAll(false)
 
-      request.onsuccess = () => resolve(request.result)
+      const results: OfflineData[] = []
+      // Boolean keys are not valid IndexedDB keys across browsers, so
+      // we iterate the index and filter by the record's value instead of using a key range.
+      const request = index.openCursor()
+
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result
+        if (cursor) {
+          const value = cursor.value as OfflineData
+          if (value && value.synced === false) {
+            results.push(value)
+          }
+          cursor.continue()
+        } else {
+          resolve(results)
+        }
+      }
       request.onerror = () => reject(request.error)
     })
   }

@@ -18,7 +18,9 @@ import { voiceService } from "@/lib/voice-service"
 
 export default function SettingsPage() {
   const { user, farmerProfile } = useAuth()
-  const { t, currentLanguage, setLanguage } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const currentLanguage = i18n.language
+  const setLanguage = (lng: string) => i18n.changeLanguage(lng)
   const [settings, setSettings] = useState({
     notifications: {
       marketAlerts: true,

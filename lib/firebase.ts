@@ -1,9 +1,19 @@
+interface MockAuthObserver {
+  next?: (user: any) => void
+  error?: (err: any) => void
+  complete?: () => void
+}
+
 interface MockAuth {
   currentUser: any
-  signInWithEmailAndPassword: (email: string, password: string) => Promise<any>
-  createUserWithEmailAndPassword: (email: string, password: string) => Promise<any>
-  signOut: () => Promise<void>
-  onAuthStateChanged: (callback: (user: any) => void) => () => void
+  // Accepts either (email, password) or (auth, email, password)
+  signInWithEmailAndPassword: (...args: any[]) => Promise<any>
+  // Accepts either (email, password) or (auth, email, password)
+  createUserWithEmailAndPassword: (...args: any[]) => Promise<any>
+  // Accepts either () or (auth)
+  signOut: (...args: any[]) => Promise<void>
+  // Accepts (callback|observer) or (auth, callback|observer)
+  onAuthStateChanged: (...args: any[]) => () => void
 }
 
 interface MockDb {
@@ -16,24 +26,75 @@ interface MockStorage {
 }
 
 // Mock Firebase services for development
+// Simple subscriber registry
+const authSubscribers: Array<(user: any) => void> = []
+
+const notifyAuthSubscribers = (user: any) => {
+  for (const cb of authSubscribers) {
+    try {
+      cb(user)
+    } catch (e) {
+      // swallow
+    }
+  }
+}
+
 export const auth: MockAuth = {
   currentUser: null,
-  signInWithEmailAndPassword: async (email: string, password: string) => {
+  signInWithEmailAndPassword: async (...args: any[]) => {
+    // Support (auth, email, password) or (email, password)
+    const email = args.length === 3 ? args[1] : args[0]
     console.log("[v0] Mock sign in:", email)
-    return { user: { uid: "mock-user-id", email } }
+    const user = { uid: "mock-user-id", email }
+    auth.currentUser = user
+    // Notify listeners about sign-in
+    notifyAuthSubscribers(user)
+    return { user }
   },
-  createUserWithEmailAndPassword: async (email: string, password: string) => {
+  createUserWithEmailAndPassword: async (...args: any[]) => {
+    const email = args.length === 3 ? args[1] : args[0]
     console.log("[v0] Mock sign up:", email)
-    return { user: { uid: "mock-user-id", email } }
+    const user = { uid: "mock-user-id", email }
+    auth.currentUser = user
+    // Notify listeners about sign-up (treated as signed-in)
+    notifyAuthSubscribers(user)
+    return { user }
   },
-  signOut: async () => {
+  signOut: async (..._args: any[]) => {
     console.log("[v0] Mock sign out")
+    auth.currentUser = null
+    notifyAuthSubscribers(null)
   },
-  onAuthStateChanged: (callback: (user: any) => void) => {
-    console.log("[v0] Mock auth state changed")
-    // Simulate no user initially
-    setTimeout(() => callback(null), 100)
-    return () => {}
+  onAuthStateChanged: (...args: any[]) => {
+    // Normalize arguments
+    const maybeFirst = args[0]
+    const maybeSecond = args[1]
+
+    let callbackOrObserver: ((user: any) => void) | MockAuthObserver
+    if (typeof maybeFirst === "function" || (maybeFirst && typeof maybeFirst.next === "function")) {
+      callbackOrObserver = maybeFirst
+    } else {
+      callbackOrObserver = maybeSecond
+    }
+
+    const cb: (user: any) => void = (user) => {
+      if (typeof callbackOrObserver === "function") {
+        callbackOrObserver(user)
+      } else if (callbackOrObserver && typeof callbackOrObserver.next === "function") {
+        callbackOrObserver.next(user)
+      }
+    }
+
+    // Add subscriber
+    authSubscribers.push(cb)
+    // Emit current state asynchronously to mimic Firebase behavior
+    setTimeout(() => cb(auth.currentUser), 0)
+
+    // Return unsubscribe
+    return () => {
+      const idx = authSubscribers.indexOf(cb)
+      if (idx >= 0) authSubscribers.splice(idx, 1)
+    }
   },
 }
 

@@ -37,7 +37,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, farmerProfile, logout } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const { t, currentLanguage, setLanguage } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const currentLanguage = i18n.language
+  const setLanguage = (lng: string) => i18n.changeLanguage(lng)
 
   const handleSignOut = async () => {
     await logout()
@@ -63,7 +65,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Logo */}
             <div className="flex h-16 items-center px-6 border-b">
               <Sprout className="h-8 w-8 text-green-600" />
-              <span className="ml-2 text-lg font-semibold">FarmLink RW</span>
+              <span className="ml-2 text-lg font-semibold">{t("FarmLink RW")}</span>
             </div>
 
             {/* Navigation */}
@@ -114,7 +116,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Logo */}
           <div className="flex h-16 items-center px-6 border-b">
             <Sprout className="h-8 w-8 text-green-600" />
-            <span className="ml-2 text-lg font-semibold">FarmLink RW</span>
+            <span className="ml-2 text-lg font-semibold">{t("FarmLink RW")}</span>
           </div>
 
           {/* Navigation */}
@@ -161,11 +163,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="lg:pl-64">
         {/* Top bar */}
         <div className="sticky top-0 z-40 flex h-16 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="lg:hidden">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex items-center">

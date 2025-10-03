@@ -14,7 +14,9 @@ interface VoiceAssistantProps {
 }
 
 export function VoiceAssistant({ onCommand, className }: VoiceAssistantProps) {
-  const { t, currentLanguage, setLanguage } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const currentLanguage = i18n.language
+  const setLanguage = (lng: string) => i18n.changeLanguage(lng)
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState("")
   const [confidence, setConfidence] = useState(0)
@@ -47,7 +49,16 @@ export function VoiceAssistant({ onCommand, className }: VoiceAssistantProps) {
           }
         },
         (error) => {
-          setError(error)
+          // Map common errors to localized, user-friendly messages
+          const message =
+            error === "mic-permission-denied"
+              ? t("Microphone permission denied. Please allow mic access and try again.")
+              : error === "speech-recognition-not-available"
+              ? t("Speech recognition is not available in this browser.")
+              : error === "recognition-network-error"
+              ? t("Network error during recognition. Check your connection.")
+              : t("An error occurred with speech recognition.")
+          setError(message)
           setIsListening(false)
         },
       )
@@ -98,7 +109,11 @@ export function VoiceAssistant({ onCommand, className }: VoiceAssistantProps) {
   const toggleLanguage = () => {
     const newLang = currentLanguage === "en" ? "rw" : "en"
     setLanguage(newLang)
-    speak(newLang === "en" ? "Language changed to English" : "Ururimi rwahinduwe ku Kinyarwanda")
+    speak(
+      newLang === "en"
+        ? t("Language changed to English")
+        : t("Language changed to Kinyarwanda")
+    )
   }
 
   return (

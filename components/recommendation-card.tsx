@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import type { LucideIcon } from "lucide-react"
+import type { LucideIcon } from "@/lib/lucide-react"
 
 interface RecommendationCardProps {
   title: string

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-react"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns"
 
-interface Activity {
+export interface Activity {
   id: string
   title: string
   crop: string
@@ -16,7 +16,7 @@ interface Activity {
   priority: "high" | "medium" | "low"
 }
 
-interface ActivityCalendarProps {
+export interface ActivityCalendarProps {
   activities: Activity[]
 }
 

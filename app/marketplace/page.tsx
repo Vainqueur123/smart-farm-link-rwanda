@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, TrendingUp, MapPin, Phone, Star, Plus } from "lucide-react"
-import { districts } from "@/lib/districts"
+import { DISTRICTS } from "@/lib/districts"
 import { useTranslation } from "@/lib/i18n"
 
 interface MarketListing {
@@ -48,7 +48,8 @@ interface MarketPrice {
 
 export default function MarketplacePage() {
   const { user } = useAuth()
-  const { t, currentLanguage } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const currentLanguage = i18n.language
   const [activeTab, setActiveTab] = useState("browse")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedDistrict, setSelectedDistrict] = useState("all")
@@ -176,6 +177,8 @@ export default function MarketplacePage() {
 
   const crops = ["Maize", "Irish Potatoes", "Coffee", "Beans", "Rice", "Cassava", "Sweet Potatoes", "Bananas"]
 
+  const allDistricts = Object.values(DISTRICTS)
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -232,7 +235,7 @@ export default function MarketplacePage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("All Districts")}</SelectItem>
-                      {districts.map((district) => (
+                      {allDistricts.map((district) => (
                         <SelectItem key={district.name} value={district.name}>
                           {district.name}
                         </SelectItem>
@@ -312,10 +315,19 @@ export default function MarketplacePage() {
                       <p className="text-sm text-muted-foreground line-clamp-2">{listing.description}</p>
 
                       <div className="flex gap-2 pt-2">
-                        <Button className="flex-1 bg-green-600 hover:bg-green-700">{t("Contact Farmer")}</Button>
-                        <Button variant="outline" size="icon">
-                          <Phone className="h-4 w-4" />
+                        <Button
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          onClick={() => window.open(`tel:${listing.farmerPhone}`)}
+                        >
+                          {t("Contact Farmer")}
                         </Button>
+                        <a
+                          href={`tel:${listing.farmerPhone}`}
+                          aria-label={t("Call Farmer")}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                        >
+                          <Phone className="h-4 w-4" />
+                        </a>
                       </div>
                     </div>
                   </CardContent>

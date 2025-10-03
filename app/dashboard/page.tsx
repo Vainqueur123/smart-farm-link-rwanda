@@ -13,15 +13,22 @@ import { getDistrictProfile, getRecommendedCropsForDistrict } from "@/lib/distri
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { WeatherWidget } from "@/components/weather-widget"
 import { ActivityCalendar } from "@/components/activity-calendar"
+import type { Activity } from "@/components/activity-calendar"
 import { CropCard } from "@/components/crop-card"
 import { RecommendationCard } from "@/components/recommendation-card"
-import { useTranslation } from "react-i18next"
+import { useTranslation } from "@/lib/i18n"
 
 export default function DashboardPage() {
   const { user, farmerProfile, loading } = useAuth()
   const router = useRouter()
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState("overview")
+  const [mounted, setMounted] = useState(false)
+
+  // Avoid SSR/CSR markup mismatches from dynamic values (dates, Math.random, locale formatting)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!loading && !user) {
@@ -31,6 +38,9 @@ export default function DashboardPage() {
       router.push("/onboarding")
     }
   }, [user, farmerProfile, loading, router])
+
+  // Ensure client has mounted before any rendering to prevent hydration errors
+  if (!mounted) return null
 
   if (loading) {
     return (
@@ -44,12 +54,13 @@ export default function DashboardPage() {
   }
 
   if (!user || !farmerProfile) return null
+  const profile = farmerProfile!
 
-  const districtProfile = getDistrictProfile(farmerProfile.district)
-  const recommendedCrops = getRecommendedCropsForDistrict(farmerProfile.district)
+  const districtProfile = getDistrictProfile(profile.district)
+  // const recommendedCrops = getRecommendedCropsForDistrict(farmerProfile.district)
 
   // Mock data for demo - in production this would come from Firebase
-  const upcomingActivities = [
+  const upcomingActivities: Activity[] = [
     {
       id: "1",
       title: "Water Maize Field",
@@ -97,18 +108,20 @@ export default function DashboardPage() {
                 <div className="flex items-center space-x-1">
                   <MapPin className="h-4 w-4" />
                   <span>
-                    {farmerProfile.district}, {districtProfile?.province}
+                    {profile.district}, {districtProfile?.province}
                   </span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Sprout className="h-4 w-4" />
-                  <span>{farmerProfile.farmSize} hectares</span>
+                  <span>
+                    {profile.farmSize} {t("hectares")}
+                  </span>
                 </div>
               </div>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold">{farmStats.yieldPrediction}%</div>
-              <div className="text-green-100">Predicted Yield</div>
+              <div className="text-green-100">{t("Predicted Yield")}</div>
             </div>
           </div>
         </div>
@@ -119,7 +132,7 @@ export default function DashboardPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Active Crops</p>
+                  <p className="text-sm text-gray-600">{t("Active Crops")}</p>
                   <p className="text-2xl font-bold text-green-600">{farmStats.totalCrops}</p>
                 </div>
                 <Sprout className="h-8 w-8 text-green-600" />
@@ -131,7 +144,7 @@ export default function DashboardPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Pending Tasks</p>
+                  <p className="text-sm text-gray-600">{t("Pending Tasks")}</p>
                   <p className="text-2xl font-bold text-orange-600">{farmStats.activeActivities}</p>
                 </div>
                 <Clock className="h-8 w-8 text-orange-600" />
@@ -143,7 +156,7 @@ export default function DashboardPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Completed This Week</p>
+                  <p className="text-sm text-gray-600">{t("Completed This Week")}</p>
                   <p className="text-2xl font-bold text-blue-600">{farmStats.completedThisWeek}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-blue-600" />
@@ -155,7 +168,7 @@ export default function DashboardPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Yield Prediction</p>
+                  <p className="text-sm text-gray-600">{t("Yield Prediction")}</p>
                   <p className="text-2xl font-bold text-green-600">{farmStats.yieldPrediction}%</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600" />
@@ -168,10 +181,10 @@ export default function DashboardPage() {
         <div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="activities">Activities</TabsTrigger>
-              <TabsTrigger value="crops">My Crops</TabsTrigger>
-              <TabsTrigger value="insights">Insights</TabsTrigger>
+              <TabsTrigger value="overview">{t("Overview")}</TabsTrigger>
+              <TabsTrigger value="activities">{t("Activities")}</TabsTrigger>
+              <TabsTrigger value="crops">{t("My Crops")}</TabsTrigger>
+              <TabsTrigger value="insights">{t("Insights")}</TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
@@ -179,7 +192,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Weather Widget */}
                 <div className="lg:col-span-1">
-                  <WeatherWidget district={farmerProfile.district} />
+                  <WeatherWidget district={profile.district} />
                 </div>
 
                 {/* Upcoming Activities */}
@@ -187,12 +200,12 @@ export default function DashboardPage() {
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                       <div>
-                        <CardTitle>Upcoming Activities</CardTitle>
-                        <CardDescription>Tasks scheduled for the next 7 days</CardDescription>
+                        <CardTitle>{t("Upcoming Activities")}</CardTitle>
+                        <CardDescription>{t("Tasks scheduled for the next 7 days")}</CardDescription>
                       </div>
                       <Button size="sm" onClick={() => setActiveTab("activities")}>
                         <Plus className="h-4 w-4 mr-2" />
-                        Add Task
+                        {t("Add Task")}
                       </Button>
                     </CardHeader>
                     <CardContent>
@@ -233,32 +246,34 @@ export default function DashboardPage() {
               {/* District Recommendations */}
               <Card>
                 <CardHeader>
-                  <CardTitle>District-Specific Recommendations</CardTitle>
-                  <CardDescription>Personalized advice for farming in {farmerProfile.district}</CardDescription>
+                  <CardTitle>{t("District-Specific Recommendations")}</CardTitle>
+                  <CardDescription>
+                    {t("Personalized advice for farming in")} {profile.district}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <RecommendationCard
-                      title="Optimal Planting Season"
-                      description="Based on {district} climate data, the best time to plant maize is approaching in 2 weeks."
+                      title={t("Optimal Planting Season")}
+                      description={t("Best time to plant maize is approaching in 2 weeks")}
                       icon={Calendar}
                       type="seasonal"
                     />
                     <RecommendationCard
-                      title="Soil Preparation"
-                      description="Your district's clay soil benefits from organic matter. Consider adding compost before planting."
+                      title={t("Soil Preparation")}
+                      description={t("Clay soil benefits from organic matter. Consider adding compost before planting")}
                       icon={Sprout}
                       type="soil"
                     />
                     <RecommendationCard
-                      title="Water Management"
-                      description="Rainfall prediction shows dry period ahead. Plan irrigation for next month."
+                      title={t("Water Management")}
+                      description={t("Dry period ahead. Plan irrigation for next month")}
                       icon={Droplets}
                       type="water"
                     />
                     <RecommendationCard
-                      title="Market Opportunity"
-                      description="Bean prices are 15% higher in neighboring districts. Consider expanding production."
+                      title={t("Market Opportunity")}
+                      description={t("Bean prices are higher in neighboring districts. Consider expanding production")}
                       icon={TrendingUp}
                       type="market"
                     />
@@ -271,12 +286,12 @@ export default function DashboardPage() {
             <TabsContent value="activities" className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold">Farm Activities</h2>
-                  <p className="text-gray-600">Manage your farming schedule and track progress</p>
+                  <h2 className="text-2xl font-bold">{t("Farm Activities")}</h2>
+                  <p className="text-gray-600">{t("Manage your farming schedule and track progress")}</p>
                 </div>
                 <Button className="bg-green-600 hover:bg-green-700">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Activity
+                  {t("Add Activity")}
                 </Button>
               </div>
               <ActivityCalendar activities={upcomingActivities} />
@@ -286,20 +301,20 @@ export default function DashboardPage() {
             <TabsContent value="crops" className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold">My Crops</h2>
-                  <p className="text-gray-600">Monitor your crop health and progress</p>
+                  <h2 className="text-2xl font-bold">{t("My Crops")}</h2>
+                  <p className="text-gray-600">{t("Monitor your crop health and progress")}</p>
                 </div>
                 <Button className="bg-green-600 hover:bg-green-700">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Crop
+                  {t("Add Crop")}
                 </Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {farmerProfile.primaryCrops.map((crop) => (
+                {profile.primaryCrops.map((crop) => (
                   <CropCard
                     key={crop}
                     crop={crop}
-                    district={farmerProfile.district}
+                    district={profile.district}
                     progress={Math.floor(Math.random() * 100)}
                     health="good"
                     nextActivity="watering"
@@ -311,16 +326,16 @@ export default function DashboardPage() {
             {/* Insights Tab */}
             <TabsContent value="insights" className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold">Farm Insights</h2>
-                <p className="text-gray-600">Data-driven insights to improve your farming</p>
+                <h2 className="text-2xl font-bold">{t("Farm Insights")}</h2>
+                <p className="text-gray-600">{t("Data-driven insights to improve your farming")}</p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Yield Trends */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Yield Trends</CardTitle>
-                    <CardDescription>Your farm performance over time</CardDescription>
+                    <CardTitle>{t("Yield Trends")}</CardTitle>
+                    <CardDescription>{t("Your farm performance over time")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -328,7 +343,7 @@ export default function DashboardPage() {
                         <div key={crop} className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className="capitalize">{t(crop)}</span>
-                            <span className="text-green-600">+12% vs last season</span>
+                            <span className="text-green-600">+12% {t("vs last season")}</span>
                           </div>
                           <Progress value={Math.floor(Math.random() * 40) + 60} className="h-2" />
                         </div>
@@ -340,22 +355,21 @@ export default function DashboardPage() {
                 {/* District Comparison */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>District Performance</CardTitle>
-                    <CardDescription>How you compare to other farmers in {farmerProfile.district}</CardDescription>
+                    <CardTitle>{t("District Performance")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <span>Productivity Rank</span>
-                        <Badge variant="secondary">Top 25%</Badge>
+                        <span>{t("Productivity Rank")}</span>
+                        <Badge variant="secondary">{t("Top 25%")}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>Sustainability Score</span>
+                        <span>{t("Sustainability Score")}</span>
                         <span className="text-green-600 font-medium">8.2/10</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>Technology Adoption</span>
-                        <Badge className="bg-green-600">Advanced</Badge>
+                        <span>{t("Technology Adoption")}</span>
+                        <Badge className="bg-green-600">{t("Advanced")}</Badge>
                       </div>
                     </div>
                   </CardContent>
@@ -365,23 +379,24 @@ export default function DashboardPage() {
               {/* Recommendations based on district data */}
               <Card>
                 <CardHeader>
-                  <CardTitle>NISR Data Insights</CardTitle>
+                  <CardTitle>{t("NISR Data Insights")}</CardTitle>
                   <CardDescription>
-                    Recommendations based on National Institute of Statistics Rwanda data
+                    {t("Recommendations based on National Institute of Statistics Rwanda data")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 bg-blue-50 rounded-lg">
-                      <h4 className="font-medium text-blue-900 mb-2">Income Opportunity</h4>
+                      <h4 className="font-medium text-blue-900 mb-2">{t("Income Opportunity")}</h4>
                       <p className="text-sm text-blue-700">
-                        Farmers in {farmerProfile.district} who diversify with coffee see 23% higher income on average.
+                        {t("Farmers in")} {profile.district} 
+                        {t("who diversify with coffee see higher income on average")}
                       </p>
                     </div>
                     <div className="p-4 bg-green-50 rounded-lg">
-                      <h4 className="font-medium text-green-900 mb-2">Productivity Tip</h4>
+                      <h4 className="font-medium text-green-900 mb-2">{t("Productivity Tip")}</h4>
                       <p className="text-sm text-green-700">
-                        Your district's soil type responds well to organic fertilizers, showing 18% better yields.
+                        {t("Your district soil responds well to organic fertilizers showing better yields")}
                       </p>
                     </div>
                   </div>

@@ -1,5 +1,8 @@
 import withPWA from 'next-pwa';
 
+// Disable PWA in development to avoid service worker interference
+const isDev = process.env.NODE_ENV === 'development';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -24,6 +27,7 @@ export default withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
+  disable: isDev,
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/firestore\.googleapis\.com/,

@@ -39,6 +39,24 @@ class VoiceService {
     }
   }
 
+  private async ensureMicPermission(): Promise<void> {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return
+    try {
+      // Trigger permission prompt; must be called from a user gesture upstream
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // Immediately stop tracks to free the mic
+      stream.getTracks().forEach((t) => t.stop())
+    } catch (err: any) {
+      // Surface a standardized error so callers can inform the user
+      const code = err?.name || err?.message || "mic-permission-denied"
+      throw new Error(code)
+    }
+  }
+
+  isRecognitionAvailable(): boolean {
+    return !!this.recognition
+  }
+
   async speak(text: string, config: VoiceConfig = { language: "en-US" }): Promise<void> {
     if (!this.synthesis) {
       console.warn("[v0] Speech synthesis not available")
@@ -78,11 +96,24 @@ class VoiceService {
     onError?: (error: any) => void,
   ): Promise<void> {
     if (!this.recognition) {
-      throw new Error("Speech recognition not available")
+      const msg = "speech-recognition-not-available"
+      if (onError) onError(msg)
+      throw new Error(msg)
     }
 
     if (this.isListening) {
       this.stopListening()
+    }
+
+    // Request mic permission first (must be invoked in a user gesture context by caller)
+    try {
+      await this.ensureMicPermission()
+    } catch (permErr: any) {
+      const code = typeof permErr?.message === "string" ? permErr.message : "mic-permission-denied"
+      console.warn("[v0] Mic permission error:", code)
+      this.isListening = false
+      if (onError) onError(code)
+      return
     }
 
     this.recognition.lang = config.language
@@ -105,11 +136,18 @@ class VoiceService {
     }
 
     this.recognition.onerror = (event: any) => {
-      console.error("[v0] Speech recognition error:", event.error)
+      const err = event?.error || "unknown"
+      // Map common browser errors to friendlier codes
+      const mapped = err === "not-allowed"
+        ? "mic-permission-denied"
+        : err === "aborted"
+          ? "recognition-aborted"
+          : err === "network"
+            ? "recognition-network-error"
+            : err
+      console.error("[v0] Speech recognition error:", mapped)
       this.isListening = false
-      if (onError) {
-        onError(event.error)
-      }
+      if (onError) onError(mapped)
     }
 
     this.recognition.onend = () => {
@@ -133,8 +171,11 @@ class VoiceService {
 
   // Translate text between English and Kinyarwanda (mock implementation)
   async translateText(text: string, from: string, to: string): Promise<string> {
+    type Lang = "en" | "rw"
+    type TranslationTable = Record<Lang, Record<Lang, Record<string, string>>>
+
     // In a real implementation, this would use Google Translate API or similar
-    const translations: Record<string, Record<string, string>> = {
+    const translations: TranslationTable = {
       en: {
         rw: {
           Hello: "Muraho",
@@ -150,6 +191,7 @@ class VoiceService {
           Farmer: "Umuhinzi",
           Harvest: "Gusarura",
         },
+        en: {},
       },
       rw: {
         en: {
@@ -166,10 +208,13 @@ class VoiceService {
           Umuhinzi: "Farmer",
           Gusarura: "Harvest",
         },
+        rw: {},
       },
     }
 
-    const translation = translations[from]?.[to]?.[text]
+    const f = (from?.slice(0, 2) || "en") as Lang
+    const t = (to?.slice(0, 2) || "en") as Lang
+    const translation: string | undefined = translations[f]?.[t]?.[text]
     return translation || text
   }
 
