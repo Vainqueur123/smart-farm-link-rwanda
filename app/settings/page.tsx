@@ -4,17 +4,15 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Bell, Globe, Smartphone, Wifi, Volume2, Shield, Download, Trash2, RefreshCw } from "lucide-react"
+import { User, Bell, Globe, Smartphone, wifi, Shield, Download, Trash2, RefreshCw } from "lucide-react"
 import { useTranslation } from "@/lib/i18n"
 import { offlineService } from "@/lib/offline-service"
-import { voiceService } from "@/lib/voice-service"
 
 export default function SettingsPage() {
   const { user, farmerProfile } = useAuth()
@@ -28,12 +26,6 @@ export default function SettingsPage() {
       weatherUpdates: true,
       farmingTips: false,
       smsBackup: true,
-    },
-    voice: {
-      enabled: true,
-      language: currentLanguage,
-      autoSpeak: false,
-      voiceCommands: true,
     },
     offline: {
       autoSync: true,
@@ -83,12 +75,7 @@ export default function SettingsPage() {
     await loadCacheInfo()
   }
 
-  const testVoice = async () => {
-    await voiceService.speak(
-      currentLanguage === "en" ? "Voice assistant is working correctly" : "Ubufasha bw'ijwi bukora neza",
-      { language: currentLanguage === "en" ? "en-US" : "rw-RW" },
-    )
-  }
+  
 
   return (
     <DashboardLayout>
@@ -99,10 +86,10 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">{t("Profile")}</TabsTrigger>
             <TabsTrigger value="notifications">{t("Notifications")}</TabsTrigger>
-            <TabsTrigger value="voice">{t("Voice")}</TabsTrigger>
+            
             <TabsTrigger value="offline">{t("Offline")}</TabsTrigger>
             <TabsTrigger value="privacy">{t("Privacy")}</TabsTrigger>
           </TabsList>
@@ -261,85 +248,7 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="voice" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Volume2 className="h-5 w-5" />
-                  {t("Voice Assistant Settings")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Enable Voice Assistant")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Use voice commands to navigate and control the app")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.voice.enabled}
-                      onCheckedChange={(checked) => handleSettingChange("voice", "enabled", checked)}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Voice Commands")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Respond to voice commands like 'open marketplace'")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.voice.voiceCommands}
-                      onCheckedChange={(checked) => handleSettingChange("voice", "voiceCommands", checked)}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Auto-speak Responses")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Automatically read out important information")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.voice.autoSpeak}
-                      onCheckedChange={(checked) => handleSettingChange("voice", "autoSpeak", checked)}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <Label>{t("Voice Language")}</Label>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={settings.voice.language === "en" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleSettingChange("voice", "language", "en")}
-                      >
-                        English
-                      </Button>
-                      <Button
-                        variant={settings.voice.language === "rw" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleSettingChange("voice", "language", "rw")}
-                      >
-                        Kinyarwanda
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Button variant="outline" onClick={testVoice}>
-                    <Volume2 className="h-4 w-4 mr-2" />
-                    {t("Test Voice")}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
 
           <TabsContent value="offline" className="space-y-6">
             <Card>

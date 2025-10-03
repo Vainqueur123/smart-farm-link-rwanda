@@ -1,6 +1,4 @@
 "use client"
-
-import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
@@ -17,20 +15,10 @@ import {
 import { Home, Sprout, ShoppingCart, CreditCard, Settings, User, LogOut, Menu, Bell, Globe } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useTranslation } from "@/lib/i18n"
-import { VoiceAssistant } from "@/components/voice-assistant"
-import { OfflineIndicator } from "@/components/offline-indicator"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "My Farm", href: "/farm", icon: Sprout },
-  { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
-  { name: "Transactions", href: "/transactions", icon: CreditCard },
-  { name: "Settings", href: "/settings", icon: Settings },
-]
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -38,24 +26,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { t, i18n } = useTranslation()
-  const currentLanguage = i18n.language
+  const navigation = [
+    { name: "Dashboard", href: "/dashboard", icon: Home },
+    { name: "My Farm", href: "/farm", icon: Sprout },
+    { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
+    { name: "Transactions", href: "/transactions", icon: CreditCard },
+    { name: "Settings", href: "/settings", icon: Settings },
+  ]
   const setLanguage = (lng: string) => i18n.changeLanguage(lng)
 
   const handleSignOut = async () => {
     await logout()
     router.push("/")
   }
-
+{{ ... }}
   const toggleLanguage = () => {
     const newLang = currentLanguage === "en" ? "rw" : "en"
     setLanguage(newLang)
   }
-
-  const handleVoiceCommand = (command: string, language: string) => {
-    console.log("[v0] Voice command received:", command, language)
-    // Voice commands are processed in the VoiceAssistant component
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
@@ -88,9 +76,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               })}
             </nav>
 
-            <div className="px-3 pb-4">
-              <VoiceAssistant onCommand={handleVoiceCommand} />
-            </div>
+            
 
             {/* User info */}
             <div className="border-t p-4">
@@ -138,9 +124,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-          <div className="px-3 pb-4">
-            <VoiceAssistant onCommand={handleVoiceCommand} />
-          </div>
+          
 
           {/* User info */}
           <div className="border-t p-4">
