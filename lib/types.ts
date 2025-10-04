@@ -33,20 +33,119 @@ export type DistrictCode =
 export type Province = "Kigali" | "Southern" | "Northern" | "Western" | "Eastern"
 
 export type CropType =
-  | "maize"
-  | "beans"
-  | "sorghum"
-  | "sweet_potato"
-  | "cassava"
-  | "irish_potato"
-  | "banana"
-  | "coffee"
-  | "tea"
-  | "rice"
-  | "wheat"
-  | "groundnuts"
+  | 'maize'
+  | 'coffee'
+  | 'tea'
+  | 'beans'
+  | 'potatoes'
+  | 'mango'
+  | 'banana'
+  | 'apple'
+  | 'avocado'
+  | 'pineapple'
+  | 'tomato'
+  | 'onion'
+  | 'cabbage'
+  | 'carrot'
+  | 'spinach'
+  | 'rice'
+  | 'wheat'
+  | 'barley'
+  | 'sorghum'
+  | 'chili'
+  | 'garlic'
+  | 'ginger'
+  | 'turmeric'
+  | 'sweet_potato'
+  | 'cassava'
+  | 'irish_potato'
+  | 'banana'
+  | 'tea'
+  | 'rice'
+  | 'wheat'
+  | 'groundnuts'
+  | 'vegetables'
+  | 'fruits'
+  | 'spices'
+  | 'avocado'
+  | 'passion_fruit'
+  | 'pineapple'
+  | 'mango'
+  | 'tomato'
+  | 'onion'
+  | 'carrot'
+  | 'cabbage'
+  | 'eggplant'
+  | 'pepper'
 
-export type PaymentMethod = "mtn_momo" | "airtel_money" | "bk_connect" | "cash"
+export type PaymentMethod = 'mtn_momo' | 'airtel_money' | 'bk_connect' | 'cash' | 'bank_transfer'
+
+export type Unit = 'kg' | 'g' | 'ton' | 'bag' | 'bunch' | 'piece' | 'liter' | 'dozen'
+
+export interface Product {
+  id: string
+  name: string
+  type: CropType
+  description: string
+  pricePerKg: number
+  minOrderQuantity: number
+  availableQuantity: number
+  unit: string
+  district: string
+  farmerId: string
+  farmerName: string
+  rating: number
+  reviewCount: number
+  imageUrl: string
+  isOrganic: boolean
+  harvestDate: string
+  paymentMethods?: PaymentMethod[]
+  isVerified?: boolean
+  createdAt: string
+  updatedAt: string
+  certifications?: string[]
+  processingMethod?: string
+  moistureContent?: number
+  packaging?: string
+  minOrderValue?: number
+  deliveryOptions?: {
+    pickup: boolean
+    delivery: boolean
+    shipping?: {
+      available: boolean
+      cost: number
+      regions: string[]
+    }
+  }
+  tags?: string[]
+  viewCount?: number
+  isBestSeller?: boolean
+  isNewArrival?: boolean
+  isOnSale?: boolean
+  originalPrice?: number
+  discountPercentage?: number
+  stockStatus?: 'in_stock' | 'low_stock' | 'out_of_stock'
+  soldQuantity?: number
+  relatedProducts?: string[]
+  faqs?: Array<{
+    question: string
+    answer: string
+  }>
+  returnPolicy?: string
+  storageInstructions?: string
+  shelfLife?: string
+  nutritionalInfo?: Record<string, string>
+  allergens?: string[]
+  preparationInstructions?: string
+  servingSuggestion?: string
+  recipeIdeas?: string[]
+  sustainabilityInfo?: {
+    waterUsage?: string
+    carbonFootprint?: string
+    fairTrade?: boolean
+    organicCertification?: string
+  }
+}
 
 export type Language = "rw" | "en" | "fr"
 

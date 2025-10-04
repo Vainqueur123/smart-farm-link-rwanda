@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Home, Sprout, ShoppingCart, CreditCard, Settings, User, LogOut, Menu, Bell, Globe } from "lucide-react"
+import { Home, Sprout, ShoppingCart, CreditCard, Settings, User, LogOut, Menu, Bell, Globe, BarChart2 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useTranslation } from "@/lib/i18n"
 import { OfflineIndicator } from "@/components/offline-indicator"
@@ -33,6 +33,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "My Farm", href: "/farm", icon: Sprout },
     { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
+    { name: "Statistics", href: "/dashboard/statistics", icon: BarChart2 },
     { name: "Transactions", href: "/transactions", icon: CreditCard },
     { name: "Settings", href: "/settings", icon: Settings },
   ]

@@ -1,0 +1,12 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#F3F4F6"/>
+  <path d="M100 120C100 107.85 109.85 98 122 98H278C290.15 98 300 107.85 300 120V200C300 212.15 290.15 222 278 222H122C109.85 222 100 212.15 100 200V120Z" fill="#E5E7EB"/>
+  <path d="M120 100H280V200C280 211.046 271.046 220 260 220H140C128.954 220 120 211.046 120 200V100Z" fill="#D1D5DB"/>
+  <path d="M100 120C100 107.85 109.85 98 122 98H130V220H122C109.85 220 100 210.15 100 198V120Z" fill="#9CA3AF"/>
+  <path d="M130 98H278C290.15 98 300 107.85 300 120V128H130V98Z" fill="#9CA3AF"/>
+  <path d="M140 130H270V190H140V130Z" fill="#6B7280"/>
+  <path d="M150 140H260V180H150V140Z" fill="#4B5563"/>
+  <path d="M160 150H250V170H160V150Z" fill="#1F2937"/>
+  <text x="200" y="260" font-family="Arial" font-size="14" text-anchor="middle" fill="#6B7280">Product Image</text>
+  <text x="200" y="280" font-family="Arial" font-size="12" text-anchor="middle" fill="#9CA3AF">Image not available</text>
+</svg>
