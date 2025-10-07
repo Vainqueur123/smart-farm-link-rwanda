@@ -151,6 +151,7 @@ export type Language = "rw" | "en" | "fr"
 
 export interface FarmerProfile {
   id: string
+  name?: string
   phone: string
   district: DistrictCode
   sector: string

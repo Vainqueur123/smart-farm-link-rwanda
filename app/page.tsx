@@ -90,7 +90,10 @@ export default function HomePage() {
               <Button size="lg" onClick={() => setShowRoleSelect(true)} className="bg-green-600 hover:bg-green-700">
                 {t("getStarted")}
               </Button>
-              <Button variant="outline" size="lg" onClick={() => router.push("/auth/signin")}>
+              <Button variant="outline" size="lg" onClick={() => {
+                console.log("Sign in button clicked, navigating to /auth/signin")
+                router.push("/auth/signin")
+              }}>
                 {t("signIn")}
               </Button>
               {isInstallable && (

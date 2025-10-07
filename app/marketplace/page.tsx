@@ -47,9 +47,9 @@ import { Search, Filter, MapPin, Star, ShoppingCart, Heart, Share2, ArrowUpDown,
 import { sampleProducts, productCategories, sortOptions } from "@/lib/products"
 import { DistrictCode, Product, CropType } from "@/lib/types"
 import { useTranslation } from "@/lib/i18n"
-import { format } from "date-fns"
-import { Skeleton } from "@/components/ui/skeleton"
-import { ImageWithFallback } from "@/components/ui/image-with-fallback"
+import { PricingInsights } from "@/components/pricing-insights"
+import { BuyerNetwork } from "@/components/buyer-network"
+import { ProductCatalog } from "@/components/product-catalog"
 
 // Extend the Product interface with additional UI state
 interface ProductCardProps extends Product {
@@ -316,11 +316,13 @@ export default function MarketplacePage() {
           </Button>
         </div>
 
-        <Tabs defaultValue="browse" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="browse">Browse Products</TabsTrigger>
-            <TabsTrigger value="prices">Market Prices</TabsTrigger>
-            <TabsTrigger value="my-orders">My Orders</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="browse">{t("Browse Listings")}</TabsTrigger>
+            <TabsTrigger value="prices">{t("Market Prices")}</TabsTrigger>
+            <TabsTrigger value="buyers">{t("Buyer Network")}</TabsTrigger>
+            <TabsTrigger value="catalog">{t("Product Catalog")}</TabsTrigger>
+            <TabsTrigger value="my-listings">{t("My Listings")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="browse" className="space-y-4">
@@ -407,16 +409,57 @@ export default function MarketplacePage() {
                       </div>
                     </div>
 
-                    <div className="space-y-2 pt-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="organic"
-                          checked={filters.organicOnly}
-                          onCheckedChange={(checked) => setFilters({ ...filters, organicOnly: Boolean(checked) })}
-                        />
-                        <label
-                          htmlFor="organic"
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          <TabsContent value="prices" className="space-y-6">
+            {/* Pricing Insights */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PricingInsights crop="maize" district="Kigali" currentPrice={350} />
+              <PricingInsights crop="irish_potato" district="Musanze" currentPrice={280} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {marketPrices.map((price) => (
+                <Card key={`${price.crop}-${price.district}`}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{price.crop}</CardTitle>
+                      <Badge
+                        variant={
+                          price.trend === "up" ? "default" : price.trend === "down" ? "destructive" : "secondary"
+                        }
+                      >
+                        <TrendingUp className={`h-3 w-3 mr-1 ${price.trend === "down" ? "rotate-180" : ""}`} />
+                        {price.trend === "up" ? "Rising" : price.trend === "down" ? "Falling" : "Stable"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{price.district} District</p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-green-600">{price.currentPrice.toLocaleString()} RWF</p>
+                      <p className="text-sm text-muted-foreground">per kg</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">{t("Weekly Change")}</p>
+                        <p className={`font-medium ${price.weeklyChange > 0 ? "text-green-600" : "text-red-600"}`}>
+                          {price.weeklyChange > 0 ? "+" : ""}
+                          {price.weeklyChange}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">{t("Monthly Change")}</p>
+                        <p className={`font-medium ${price.monthlyChange > 0 ? "text-green-600" : "text-red-600"}`}>
+                          {price.monthlyChange > 0 ? "+" : ""}
+                          {price.monthlyChange}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">{t("Demand")}</p>
+                        <Badge
+                          variant={
+                            price.demand === "High" ? "default" : price.demand === "Medium" ? "secondary" : "outline"
+                          }
                         >
                           Organic Only
                         </label>
@@ -521,7 +564,15 @@ export default function MarketplacePage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="prices">
+          <TabsContent value="buyers" className="space-y-6">
+            <BuyerNetwork farmerDistrict={user?.district} />
+          </TabsContent>
+
+          <TabsContent value="catalog" className="space-y-6">
+            <ProductCatalog selectedCrop={selectedCrop} />
+          </TabsContent>
+
+          <TabsContent value="my-listings" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Market Prices</CardTitle>

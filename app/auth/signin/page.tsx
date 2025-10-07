@@ -29,10 +29,19 @@ export default function SignInPage() {
     setError("")
 
     try {
+      console.log("Attempting sign in with:", email)
       await signIn(email, password)
+      console.log("Sign in successful, redirecting to dashboard")
       router.push("/dashboard")
     } catch (error: any) {
-      setError(error.message || "Failed to sign in")
+      console.error("Sign in error:", error)
+      if (error.message === "Account does not exist") {
+        setError(t("Account does not exist") + ". " + t("Please sign up first to create an account"))
+      } else if (error.message === "Invalid credentials") {
+        setError(t("Invalid credentials") + ". " + t("Please check your email and password"))
+      } else {
+        setError(error.message || "Failed to sign in")
+      }
     } finally {
       setLoading(false)
     }
@@ -74,6 +83,21 @@ export default function SignInPage() {
                 required
                 disabled={loading}
               />
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setEmail("demo@smartfarm.rw")
+                  setPassword("demo123")
+                }}
+                disabled={loading}
+              >
+                {t("Use Demo Account")}
+              </Button>
             </div>
 
             <div className="space-y-2">

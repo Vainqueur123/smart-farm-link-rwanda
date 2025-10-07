@@ -12,8 +12,8 @@ import { useAuth } from "@/lib/auth-context"
 import { getDistrictProfile, getRecommendedCropsForDistrict } from "@/lib/districts"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { WeatherWidget } from "@/components/weather-widget"
-import { ActivityCalendar } from "@/components/activity-calendar"
-import type { Activity } from "@/components/activity-calendar"
+import { SimpleCalendar } from "@/components/simple-calendar"
+import type { Activity } from "@/components/simple-calendar"
 import { CropCard } from "@/components/crop-card"
 import { RecommendationCard } from "@/components/recommendation-card"
 import { useTranslation } from "@/lib/i18n"
@@ -63,27 +63,33 @@ export default function DashboardPage() {
   const upcomingActivities: Activity[] = [
     {
       id: "1",
-      title: "Water Maize Field",
+      title: t("Water Maize Field"),
       crop: "maize",
       type: "watering",
       dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
       priority: "high",
+      status: "pending",
+      description: t("Water the maize field in the morning")
     },
     {
       id: "2",
-      title: "Apply Fertilizer to Beans",
+      title: t("Apply Fertilizer to Beans"),
       crop: "beans",
       type: "fertilizing",
       dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
       priority: "medium",
+      status: "pending",
+      description: t("Apply organic fertilizer to bean plants")
     },
     {
       id: "3",
-      title: "Harvest Sweet Potatoes",
+      title: t("Harvest Sweet Potatoes"),
       crop: "sweet_potato",
       type: "harvesting",
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       priority: "high",
+      status: "pending",
+      description: t("Harvest mature sweet potatoes")
     },
   ]
 
@@ -102,7 +108,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold mb-2">
-                {t("welcome")}, {farmerProfile.phone}!
+                {t("welcome")}, {farmerProfile.name || farmerProfile.phone}!
               </h1>
               <div className="flex items-center space-x-4 text-green-100">
                 <div className="flex items-center space-x-1">
@@ -233,7 +239,7 @@ export default function DashboardPage() {
                               </div>
                             </div>
                             <Badge variant={activity.priority === "high" ? "destructive" : "secondary"}>
-                              {activity.priority}
+                              {t(activity.priority)}
                             </Badge>
                           </div>
                         ))}
@@ -294,7 +300,7 @@ export default function DashboardPage() {
                   {t("Add Activity")}
                 </Button>
               </div>
-              <ActivityCalendar activities={upcomingActivities} />
+              <SimpleCalendar activities={upcomingActivities} />
             </TabsContent>
 
             {/* Crops Tab */}
