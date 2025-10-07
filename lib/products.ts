@@ -73,9 +73,9 @@ export const sampleProducts: ProductData[] = [
   // Staple Crops
   {
     id: 'prod_maize_001',
-    name: 'Yellow Maize',
+    name: 'Maize',
     type: 'maize',
-    description: 'Premium quality yellow maize, perfect for human consumption and animal feed. Grown organically in the fertile soils of Rwanda.',
+    description: 'Premium quality maize, perfect for human consumption and animal feed. Grown organically in the fertile soils of Rwanda.',
     pricePerKg: 1200,
     minOrderQuantity: 10,
     availableQuantity: 1000,
@@ -278,7 +278,7 @@ export const sampleProducts: ProductData[] = [
   },
   {
     id: 'prod_bean_002',
-    name: 'Red Kidney Beans',
+    name: 'Red Beans',
     type: 'beans',
     description: 'Freshly harvested red kidney beans known for their high protein content and natural flavor.',
     pricePerKg: 1800,
@@ -347,7 +347,7 @@ export const sampleProducts: ProductData[] = [
     name: 'Green Bananas',
     type: 'fruits',
     description: 'Fresh green bananas rich in fiber and starch, ideal for cooking or local dishes like matoke.',
-    pricePerKg: 1200,
+    pricePerKg: 300,
     minOrderQuantity: 3,
     availableQuantity: 250,
     unit: 'kg',
