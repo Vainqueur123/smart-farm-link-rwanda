@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Suspense } from "react"
 import "./globals.css"
 import { AuthProvider } from "@/lib/auth-context"
+import { ErrorMonitoringSetup } from "@/components/error-monitoring-setup"
 
 export const metadata: Metadata = {
   title: "Smart Farm Link Rwanda",
@@ -46,6 +47,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <AuthProvider>
+          <ErrorMonitoringSetup />
           <Suspense fallback={null}>{children}</Suspense>
         </AuthProvider>
       </body>

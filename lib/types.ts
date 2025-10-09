@@ -149,8 +149,25 @@ export interface Product {
 
 export type Language = "rw" | "en" | "fr"
 
+export type UserRole = "farmer" | "buyer" | "admin"
+
+export interface User {
+  id: string
+  email: string
+  role: UserRole
+  name?: string
+  phone?: string
+  avatar?: string
+  isActive: boolean
+  isVerified: boolean
+  createdAt: Date
+  updatedAt: Date
+  lastLoginAt?: Date
+}
+
 export interface FarmerProfile {
   id: string
+  userId: string
   name?: string
   phone: string
   district: DistrictCode
@@ -166,6 +183,47 @@ export interface FarmerProfile {
   registrationDate: Date
   profileComplete: boolean
   avatar?: string
+  bio?: string
+  certifications?: string[]
+  farmLocation?: {
+    coordinates: [number, number]
+    address: string
+  }
+  businessLicense?: string
+  bankAccount?: {
+    accountNumber: string
+    bankName: string
+  }
+}
+
+export interface BuyerProfile {
+  id: string
+  userId: string
+  name?: string
+  phone?: string
+  company?: string
+  businessType: "individual" | "restaurant" | "retailer" | "wholesaler" | "processor"
+  location: {
+    district: DistrictCode
+    address: string
+    coordinates?: [number, number]
+  }
+  preferredCategories: CropType[]
+  budgetRange: {
+    min: number
+    max: number
+  }
+  paymentMethods: PaymentMethod[]
+  deliveryPreferences: {
+    pickup: boolean
+    delivery: boolean
+    maxDistance: number // in km
+  }
+  registrationDate: Date
+  profileComplete: boolean
+  avatar?: string
+  businessLicense?: string
+  taxId?: string
 }
 
 export interface FarmActivity {
@@ -206,11 +264,45 @@ export interface MarketListing {
   createdAt: Date
 }
 
-export interface Transaction {
+export interface Order {
   id: string
   buyerId: string
   sellerId: string
-  listingId: string
+  items: OrderItem[]
+  totalAmount: number
+  currency: "RWF"
+  status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "disputed"
+  paymentStatus: "pending" | "paid" | "failed" | "refunded"
+  paymentMethod: PaymentMethod
+  deliveryAddress: {
+    district: DistrictCode
+    address: string
+    coordinates?: [number, number]
+    contactPhone: string
+  }
+  deliveryMethod: "pickup" | "delivery"
+  estimatedDelivery?: Date
+  actualDelivery?: Date
+  notes?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface OrderItem {
+  productId: string
+  productName: string
+  quantity: number
+  unit: string
+  pricePerUnit: number
+  totalPrice: number
+  imageUrl?: string
+}
+
+export interface Transaction {
+  id: string
+  orderId: string
+  buyerId: string
+  sellerId: string
   amount: number
   currency: "RWF"
   paymentMethod: PaymentMethod
@@ -221,6 +313,54 @@ export interface Transaction {
   platformFee: number
   districtTax?: number
   notes?: string
+}
+
+export interface Message {
+  id: string
+  senderId: string
+  receiverId: string
+  orderId?: string
+  productId?: string
+  content: string
+  type: "text" | "image" | "file"
+  isRead: boolean
+  createdAt: Date
+  attachments?: string[]
+}
+
+export interface Conversation {
+  id: string
+  participants: string[]
+  lastMessage?: Message
+  unreadCount: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface Analytics {
+  totalUsers: number
+  totalFarmers: number
+  totalBuyers: number
+  totalProducts: number
+  totalOrders: number
+  totalRevenue: number
+  averageOrderValue: number
+  topSellingProducts: Array<{
+    productId: string
+    productName: string
+    salesCount: number
+    revenue: number
+  }>
+  userGrowth: Array<{
+    date: string
+    farmers: number
+    buyers: number
+  }>
+  revenueByMonth: Array<{
+    month: string
+    revenue: number
+    orders: number
+  }>
 }
 
 export interface DistrictProfile {

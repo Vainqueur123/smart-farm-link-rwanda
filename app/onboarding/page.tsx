@@ -14,7 +14,7 @@ import { Loader2, MapPin, User, Sprout, Settings } from "@/lib/lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { getDistrictsByProvince } from "@/lib/districts"
 import type { DistrictCode, Province, CropType, Language } from "@/lib/types"
-import { doc, setDoc, db } from "@/lib/firebase"
+import { doc, setDoc, updateDoc, db } from "@/lib/firebase"
 import { useTranslation } from "@/lib/i18n"
 
 const STEPS = [
@@ -105,7 +105,9 @@ export default function OnboardingPage() {
 
     try {
       const profile = {
-        id: user.uid,
+        id: user.id,
+        userId: user.id,
+        name: formData.name,
         phone: formData.phone,
         district: formData.district,
         sector: formData.sector,
@@ -121,7 +123,9 @@ export default function OnboardingPage() {
         profileComplete: true,
       }
 
-      await setDoc(doc(db, "farmers", user.uid), profile)
+      // Update both farmer profile and user document with the name
+      await setDoc(doc(db, `farmers/${user.id}`), profile)
+      await updateDoc(doc(db, `users/${user.id}`), { name: formData.name })
       await updateProfile(profile)
       router.push("/dashboard")
     } catch (error: any) {
@@ -134,7 +138,7 @@ export default function OnboardingPage() {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return formData.phone.length > 0
+        return formData.name.length > 0 && formData.phone.length > 0
       case 2:
         return formData.district && formData.sector && formData.cell && formData.village
       case 3:

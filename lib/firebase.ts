@@ -29,6 +29,9 @@ interface MockStorage {
 // Simple subscriber registry
 const authSubscribers: Array<(user: any) => void> = []
 
+// Very simple in-memory document store so get/set/update work across the app
+const mockStore: Record<string, any> = {}
+
 const notifyAuthSubscribers = (user: any) => {
   for (const cb of authSubscribers) {
     try {
@@ -45,10 +48,11 @@ export const auth: MockAuth = {
     // Support (auth, email, password) or (email, password)
     const email = args.length === 3 ? args[1] : args[0]
     console.log("[v0] Mock sign in:", email)
+    const uid = `uid_${btoa(unescape(encodeURIComponent(email))).replace(/=+/g,'')}`
     const user = { 
-      uid: "mock-user-id", 
+      uid, 
       email,
-      displayName: email === "demo@smartfarm.rw" ? "Demo Farmer" : "User"
+      displayName: email.split('@')[0]
     }
     auth.currentUser = user
     // Notify listeners about sign-in
@@ -58,10 +62,11 @@ export const auth: MockAuth = {
   createUserWithEmailAndPassword: async (...args: any[]) => {
     const email = args.length === 3 ? args[1] : args[0]
     console.log("[v0] Mock sign up:", email)
+    const uid = `uid_${btoa(unescape(encodeURIComponent(email))).replace(/=+/g,'')}`
     const user = { 
-      uid: "mock-user-id", 
+      uid, 
       email,
-      displayName: "New User"
+      displayName: email.split('@')[0]
     }
     auth.currentUser = user
     // Notify listeners about sign-up (treated as signed-in)
@@ -110,31 +115,36 @@ export const db: MockDb = {
   collection: (name: string) => ({
     doc: (id: string) => ({
       set: async (data: any) => {
-        console.log("[v0] Mock Firestore set:", name, id, data)
-        return Promise.resolve()
+        const path = `${name}/${id}`
+        mockStore[path] = { ...(mockStore[path] || {}), ...data }
+        console.log("[v0] Mock Firestore set:", path, mockStore[path])
       },
       get: async () => {
-        console.log("[v0] Mock Firestore get:", name, id)
-        return Promise.resolve({ exists: false, data: () => null })
+        const path = `${name}/${id}`
+        const exists = Object.prototype.hasOwnProperty.call(mockStore, path)
+        console.log("[v0] Mock Firestore get:", path, exists)
+        return { exists, data: () => mockStore[path] }
       },
       update: async (data: any) => {
-        console.log("[v0] Mock Firestore update:", name, id, data)
-        return Promise.resolve()
+        const path = `${name}/${id}`
+        mockStore[path] = { ...(mockStore[path] || {}), ...data }
+        console.log("[v0] Mock Firestore update:", path, mockStore[path])
       },
     }),
   }),
   doc: (path: string) => ({
     set: async (data: any) => {
-      console.log("[v0] Mock Firestore doc set:", path, data)
-      return Promise.resolve()
+      mockStore[path] = { ...(mockStore[path] || {}), ...data }
+      console.log("[v0] Mock Firestore doc set:", path, mockStore[path])
     },
     get: async () => {
-      console.log("[v0] Mock Firestore doc get:", path)
-      return Promise.resolve({ exists: false, data: () => null })
+      const exists = Object.prototype.hasOwnProperty.call(mockStore, path)
+      console.log("[v0] Mock Firestore doc get:", path, exists)
+      return { exists, data: () => mockStore[path] }
     },
     update: async (data: any) => {
-      console.log("[v0] Mock Firestore doc update:", path, data)
-      return Promise.resolve()
+      mockStore[path] = { ...(mockStore[path] || {}), ...data }
+      console.log("[v0] Mock Firestore doc update:", path, mockStore[path])
     },
   }),
 }
@@ -150,6 +160,32 @@ export const storage: MockStorage = {
 
 export const messaging = null
 
+// Mock realtime database for chat
+type Listener = (value: any) => void
+const rtdbStore: Record<string, any> = {}
+const rtdbListeners: Record<string, Listener[]> = {}
+
+export const rtdb = {
+  ref: (path: string) => ({ path }),
+}
+
+export const onValue = (ref: { path: string }, cb: Listener) => {
+  if (!rtdbListeners[ref.path]) rtdbListeners[ref.path] = []
+  rtdbListeners[ref.path].push(cb)
+  // fire initial
+  cb(rtdbStore[ref.path])
+  return () => {
+    rtdbListeners[ref.path] = (rtdbListeners[ref.path] || []).filter((l) => l !== cb)
+  }
+}
+
+export const pushValue = (ref: { path: string }, value: any) => {
+  const list = rtdbStore[ref.path] || []
+  const newList = [...list, value]
+  rtdbStore[ref.path] = newList
+  ;(rtdbListeners[ref.path] || []).forEach((cb) => cb(newList))
+}
+
 // Mock Firestore functions
 export const doc = (db: any, path: string) => db.doc(path)
 export const setDoc = async (docRef: any, data: any) => docRef.set(data)
@@ -162,7 +198,7 @@ export const signOut = auth.signOut
 export const onAuthStateChanged = auth.onAuthStateChanged
 
 // Mock User type
-export interface User {
+export interface FirebaseUser {
   uid: string
   email: string | null
 }

@@ -12,10 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Home, Sprout, ShoppingCart, CreditCard, Settings, User, LogOut, Menu, Bell, Globe, BarChart2 } from "lucide-react"
+import { Home, Sprout, ShoppingCart, CreditCard, Settings, User, LogOut, Menu, Bell, Globe, BarChart2, Shield } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useTranslation } from "@/lib/i18n"
 import { OfflineIndicator } from "@/components/offline-indicator"
+import { MessagingWidget } from "@/components/messaging-system"
+import { PerformanceMonitor } from "@/components/performance-monitor"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -23,20 +25,43 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, farmerProfile, logout } = useAuth()
+  const { user, farmerProfile, buyerProfile, logout, isAdmin, isFarmer, isBuyer } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const { t, i18n } = useTranslation()
   const currentLanguage = i18n.language
   const setLanguage = (lng: string) => i18n.changeLanguage(lng)
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "My Farm", href: "/farm", icon: Sprout },
-    { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
-    { name: "Statistics", href: "/dashboard/statistics", icon: BarChart2 },
-    { name: "Transactions", href: "/transactions", icon: CreditCard },
-    { name: "Settings", href: "/settings", icon: Settings },
-  ]
+  
+  // Role-based navigation
+  const getNavigation = () => {
+    if (isAdmin()) {
+      return [
+        { name: "Admin Dashboard", href: "/admin-dashboard", icon: Shield },
+        { name: "User Management", href: "/admin-dashboard?tab=users", icon: User },
+        { name: "Analytics", href: "/admin-dashboard?tab=analytics", icon: BarChart2 },
+        { name: "Settings", href: "/settings", icon: Settings },
+      ]
+    } else if (isBuyer()) {
+      return [
+        { name: "Buyer Dashboard", href: "/buyer-dashboard", icon: Home },
+        { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
+        { name: "My Orders", href: "/buyer-dashboard?tab=orders", icon: CreditCard },
+        { name: "Favorites", href: "/buyer-dashboard?tab=favorites", icon: ShoppingCart },
+        { name: "Settings", href: "/settings", icon: Settings },
+      ]
+    } else {
+      return [
+        { name: "Farmer Dashboard", href: "/farmer-dashboard", icon: Home },
+        { name: "My Farm", href: "/farm", icon: Sprout },
+        { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
+        { name: "Statistics", href: "/dashboard/statistics", icon: BarChart2 },
+        { name: "Transactions", href: "/transactions", icon: CreditCard },
+        { name: "Settings", href: "/settings", icon: Settings },
+      ]
+    }
+  }
+  
+  const navigation = getNavigation()
   const handleSignOut = async () => {
     await logout()
     router.push("/")
@@ -89,8 +114,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </div>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">{farmerProfile?.phone}</p>
-                  <p className="text-xs text-gray-500">{farmerProfile?.district}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {user?.name || farmerProfile?.name || buyerProfile?.name || 'User'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {user?.role === 'admin' ? 'Administrator' : 
+                     user?.role === 'farmer' ? farmerProfile?.district : 
+                     user?.role === 'buyer' ? buyerProfile?.location.district : 
+                     'User'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -137,8 +169,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">{farmerProfile?.phone}</p>
-                <p className="text-xs text-gray-500">{farmerProfile?.district}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.name || farmerProfile?.name || buyerProfile?.name || user?.email}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {user?.role === 'admin' ? 'Administrator' : 
+                   user?.role === 'farmer' ? farmerProfile?.district : 
+                   user?.role === 'buyer' ? buyerProfile?.location.district : 
+                   'User'}
+                </p>
               </div>
             </div>
           </div>
@@ -169,6 +208,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Globe className="h-4 w-4 mr-2" />
                 {currentLanguage === "en" ? "RW" : "EN"}
               </Button>
+
+              {/* Messaging Widget */}
+              {(isFarmer() || isBuyer()) && <MessagingWidget />}
 
               {/* Notifications */}
               <Button variant="ghost" size="sm">
@@ -208,7 +250,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Page content */}
         <main className="py-6">
-          <div className="px-4 sm:px-6 lg:px-8">{children}</div>
+          <div className="px-4 sm:px-6 lg:px-8">
+            <PerformanceMonitor pageName={pathname}>
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold">Welcome to your dashboard</h2>
+              </div>
+              {children}
+            </PerformanceMonitor>
+          </div>
         </main>
       </div>
     </div>

@@ -33,9 +33,26 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!loading && !user) {
       router.push("/auth/signin")
+      return
     }
-    if (!loading && user && !farmerProfile?.profileComplete) {
-      router.push("/onboarding")
+    
+    if (!loading && user) {
+      // Redirect based on user role
+      if (user.role === "buyer") {
+        router.push("/buyer-dashboard")
+        return
+      } else if (user.role === "admin") {
+        router.push("/admin-dashboard")
+        return
+      } else if (user.role === "farmer") {
+        if (!farmerProfile?.profileComplete) {
+          router.push("/onboarding")
+          return
+        } else {
+          router.push("/farmer-dashboard")
+          return
+        }
+      }
     }
   }, [user, farmerProfile, loading, router])
 
@@ -234,7 +251,7 @@ export default function DashboardPage() {
                               <div>
                                 <p className="font-medium">{activity.title}</p>
                                 <p className="text-sm text-gray-600">
-                                  {activity.dueDate.toLocaleDateString()} • {t(activity.crop)}
+                                  {activity.dueDate.toLocaleDateString()} {activity.crop ? `• ${t(activity.crop)}` : ""}
                                 </p>
                               </div>
                             </div>

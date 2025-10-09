@@ -1,15 +1,33 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useRouter } from "next/navigation"
+import Image from "next/image"
+import { format } from "date-fns"
+import { Search, Filter, MapPin, Star, ShoppingCart, Heart, Share2, ArrowUpDown, Plus, TrendingUp } from "lucide-react"
+
+// Hooks
 import { useAuth } from "@/lib/auth-context"
+import { useTranslation } from "@/lib/i18n"
+
+// Components
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { ImageWithFallback } from "@/components/image-with-fallback"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-// Replacing slider with a simple range input for now
+import { Checkbox } from "@/components/ui/checkbox"
+import { PricingInsights } from "@/components/pricing-insights"
+import { BuyerNetwork } from "@/components/buyer-network"
+
+// Types and Data
+import { sampleProducts, productCategories, sortOptions } from "@/lib/products"
+import { Product } from "@/lib/types"
+
+// Slider Component
 const Slider = ({
   value,
   onValueChange,
@@ -41,35 +59,8 @@ const Slider = ({
     </div>
   </div>
 )
-import { useRouter } from "next/navigation"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Search, Filter, MapPin, Star, ShoppingCart, Heart, Share2, ArrowUpDown, Plus } from "lucide-react"
-import { sampleProducts, productCategories, sortOptions } from "@/lib/products"
-import { DistrictCode, Product, CropType } from "@/lib/types"
-import { useTranslation } from "@/lib/i18n"
-import { PricingInsights } from "@/components/pricing-insights"
-import { BuyerNetwork } from "@/components/buyer-network"
-import { ProductCatalog } from "@/components/product-catalog"
 
-// Extend the Product interface with additional UI state
-interface ProductCardProps extends Product {
-  isFavorite?: boolean
-  inCart?: boolean
-  onAddToCart?: (productId: string) => void
-  onToggleFavorite?: (productId: string) => void
-}
-
-// Filter state interface
-interface Filters {
-  searchQuery: string
-  category: string
-  district: string
-  priceRange: [number, number]
-  organicOnly: boolean
-  inStockOnly: boolean
-  sortBy: string
-}
-
+// Product Card Component
 const ProductCard = ({
   id,
   name,
@@ -77,7 +68,6 @@ const ProductCard = ({
   pricePerKg,
   unit,
   district,
-  farmerName,
   rating,
   reviewCount,
   imageUrl,
@@ -87,10 +77,29 @@ const ProductCard = ({
   isFavorite = false,
   inCart = false,
   onAddToCart,
-  onToggleFavorite
-}: ProductCardProps) => {
+  onToggleFavorite,
+  onContactSeller
+}: {
+  id: string
+  name: string
+  description: string
+  pricePerKg: number
+  unit: string
+  district: string
+  rating: number
+  reviewCount: number
+  imageUrl: string
+  isOrganic: boolean
+  isVerified?: boolean
+  harvestDate: string
+  isFavorite?: boolean
+  inCart?: boolean
+  onAddToCart?: (productId: string) => void
+  onToggleFavorite?: (productId: string) => void
+  onContactSeller?: (productId: string) => void
+}) => {
   const { t } = useTranslation()
-  
+
   return (
     <Card className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="relative h-48 overflow-hidden rounded-t-lg bg-gray-50">
@@ -102,19 +111,19 @@ const ProductCard = ({
           className="h-full w-full object-cover object-center"
           fallbackSrc="/placeholder-product.png"
         />
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className="absolute top-2 right-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white/90"
           onClick={() => onToggleFavorite?.(id)}
         >
-          <Heart 
-            className={`h-5 w-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} 
+          <Heart
+            className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}`}
           />
         </Button>
         {isOrganic && (
-          <Badge className="absolute top-2 left-2 bg-green-600 hover:bg-green-700">
-            {t('organic')}
+          <Badge variant="success" className="absolute top-2 left-2">
+            {t("organic")}
           </Badge>
         )}
       </div>
@@ -138,21 +147,28 @@ const ProductCard = ({
       <CardContent className="pb-2 flex-1">
         <p className="text-gray-600 text-sm line-clamp-2 mb-3">{description}</p>
         <div className="flex items-center text-sm text-gray-500 mb-3">
-          <span>{t('harvested')}: {format(new Date(harvestDate), 'MMM d, yyyy')}</span>
+          <span>Harvested: {format(new Date(harvestDate), "MMM d, yyyy")}</span>
           {isVerified && (
-            <Badge variant="outline" className="ml-2 border-green-200 text-green-700">
-              {t('verified')}
+            <Badge variant="primary" className="ml-2">
+              Verified
             </Badge>
           )}
         </div>
       </CardContent>
-      <CardFooter className="pt-0">
-        <Button 
-          variant={inCart ? "outline" : "default"} 
-          className="w-full"
+      <CardFooter className="pt-0 gap-2">
+        {/* <Button
+          variant={inCart ? "outline" : "default"}
+          className="w-20px"
           onClick={() => onAddToCart?.(id)}
         >
-          {inCart ? t('in_cart') : t('add_to_cart')}
+          {inCart ? "In Cart" : "Add Cart"}
+        </Button> */}
+        <Button
+          variant="outline"
+          className="w-full mt-2"
+          onClick={() => onContactSeller?.(id)}
+        >
+          Contact Seller
         </Button>
       </CardFooter>
     </Card>
@@ -163,40 +179,41 @@ export default function MarketplacePage() {
   const { user } = useAuth()
   const { t } = useTranslation()
   const router = useRouter()
-  
+
   // State for products and filters
   const [products, setProducts] = useState<Product[]>(sampleProducts)
-  const [loading, setLoading] = useState(false)
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [activeTab, setActiveTab] = useState("browse")
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [cart, setCart] = useState<Set<string>>(new Set())
-  
+
   // Initialize filters state
-  const [filters, setFilters] = useState<Filters>({
-    searchQuery: '',
-    category: 'all',
-    district: 'all',
+  const [filters, setFilters] = useState({
+    searchQuery: "",
+    category: "all",
+    district: "all",
     priceRange: [0, 5000],
     organicOnly: false,
     inStockOnly: true,
-    sortBy: 'popular'
+    sortBy: "popular",
   })
-  
+
   // Load favorites and cart from localStorage on mount
   useEffect(() => {
-    const savedFavorites = localStorage.getItem('favorites')
-    const savedCart = localStorage.getItem('cart')
-    
+    const savedFavorites = localStorage.getItem("favorites")
+    const savedCart = localStorage.getItem("cart")
+
     if (savedFavorites) setFavorites(new Set(JSON.parse(savedFavorites)))
     if (savedCart) setCart(new Set(JSON.parse(savedCart)))
   }, [])
 
   // Save favorites and cart to localStorage when they change
   useEffect(() => {
-    localStorage.setItem('favorites', JSON.stringify(Array.from(favorites)))
+    localStorage.setItem("favorites", JSON.stringify(Array.from(favorites)))
   }, [favorites])
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(Array.from(cart)))
+    localStorage.setItem("cart", JSON.stringify(Array.from(cart)))
   }, [cart])
 
   // Handle favorite toggle
@@ -221,52 +238,63 @@ export default function MarketplacePage() {
     setCart(newCart)
   }
 
+  const routerToConversation = (productId: string) => {
+    const product = products.find(p => p.id === productId)
+    if (product) {
+      router.push(`/messages/new?productId=${product.id}&farmerId=${product.farmerId}`)
+    }
+  }
+
   // Filter and sort products with error handling
   const filteredProducts = useMemo(() => {
     if (!Array.isArray(products)) {
-      console.error('Products data is not an array:', products)
+      console.error("Products data is not an array:", products)
       return []
     }
     return products
       .filter((product: Product) => {
         // Search query filter
-        const matchesSearch = product.name.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-                            product.description.toLowerCase().includes(filters.searchQuery.toLowerCase())
-        
+        const matchesSearch =
+          product.name.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
+          product.description.toLowerCase().includes(filters.searchQuery.toLowerCase())
+
         // Category filter
-        const matchesCategory = filters.category === 'all' || 
-                              product.type === filters.category
-        
+        const matchesCategory = filters.category === "all" || product.type === filters.category
+
         // District filter
-        const matchesDistrict = !filters.district || 
-                              product.district.toLowerCase() === filters.district.toLowerCase()
-        
+        const matchesDistrict = filters.district === "all" || product.district === filters.district
+
         // Price range filter
         const [minPrice, maxPrice] = filters.priceRange
-        const matchesPrice = product.pricePerKg >= minPrice && 
-                           product.pricePerKg <= maxPrice
-        
+        const matchesPrice = product.pricePerKg >= minPrice && product.pricePerKg <= maxPrice
+
         // Organic filter
         const matchesOrganic = !filters.organicOnly || product.isOrganic
-        
+
         // In stock filter
         const matchesInStock = !filters.inStockOnly || product.availableQuantity > 0
-        
-        return matchesSearch && matchesCategory && matchesDistrict && 
-               matchesPrice && matchesOrganic && matchesInStock
+
+        return (
+          matchesSearch &&
+          matchesCategory &&
+          matchesDistrict &&
+          matchesPrice &&
+          matchesOrganic &&
+          matchesInStock
+        )
       })
       .sort((a, b) => {
         // Sorting logic
         switch (filters.sortBy) {
-          case 'price-asc':
+          case "price-asc":
             return a.pricePerKg - b.pricePerKg
-          case 'price-desc':
+          case "price-desc":
             return b.pricePerKg - a.pricePerKg
-          case 'rating':
+          case "rating":
             return b.rating - a.rating
-          case 'newest':
+          case "newest":
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          case 'popular':
+          case "popular":
           default:
             return (b.reviewCount * b.rating) - (a.reviewCount * a.rating)
         }
@@ -281,13 +309,21 @@ export default function MarketplacePage() {
       currentPrice: product.pricePerKg,
       weeklyChange: parseFloat((Math.random() * 10 - 5).toFixed(1)),
       monthlyChange: parseFloat((Math.random() * 15 - 5).toFixed(1)),
-      demand: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)] as 'Low' | 'Medium' | 'High',
-      supply: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)] as 'Low' | 'Medium' | 'High',
-      trend: Math.random() > 0.5 ? 'up' : 'down' as 'up' | 'down' | 'stable'
+      demand: ["Low", "Medium", "High"][Math.floor(Math.random() * 3)] as "Low" | "Medium" | "High",
+      supply: ["Low", "Medium", "High"][Math.floor(Math.random() * 3)] as "Low" | "Medium" | "High",
+      trend: Math.random() > 0.5 ? "up" : "down" as "up" | "down" | "stable",
     }))
   }, [products])
 
-  if (loading) {
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate loading
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
@@ -318,11 +354,11 @@ export default function MarketplacePage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="browse">{t("Browse Listings")}</TabsTrigger>
-            <TabsTrigger value="prices">{t("Market Prices")}</TabsTrigger>
-            <TabsTrigger value="buyers">{t("Buyer Network")}</TabsTrigger>
-            <TabsTrigger value="catalog">{t("Product Catalog")}</TabsTrigger>
-            <TabsTrigger value="my-listings">{t("My Listings")}</TabsTrigger>
+            <TabsTrigger value="browse">Browse Listings</TabsTrigger>
+            <TabsTrigger value="prices">Market Prices</TabsTrigger>
+            <TabsTrigger value="buyers">Buyer Network</TabsTrigger>
+            <TabsTrigger value="catalog">Product Catalog</TabsTrigger>
+            <TabsTrigger value="my-listings">My Listings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="browse" className="space-y-4">
@@ -373,11 +409,11 @@ export default function MarketplacePage() {
                         District
                       </label>
                       <Select
-                        value={filters.district || 'all'}
-                        onValueChange={(value) => setFilters({ ...filters, district: value === 'all' ? '' : value })}
+                        value={filters.district}
+                        onValueChange={(value: string) => setFilters({ ...filters, district: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="All Districts" />
+                          <SelectValue placeholder="Select district" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Districts</SelectItem>
@@ -403,63 +439,22 @@ export default function MarketplacePage() {
                           onValueChange={(value) => setFilters({ ...filters, priceRange: value as [number, number] })}
                         />
                         <div className="flex justify-between text-sm text-gray-500 mt-1">
-                          <span>RWF {filters.priceRange?.[0]?.toLocaleString?.() ?? '0'}</span>
-                          <span>RWF {filters.priceRange?.[1]?.toLocaleString?.() ?? '5000'}</span>
+                          <span>RWF {filters.priceRange[0].toLocaleString()}</span>
+                          <span>RWF {filters.priceRange[1].toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
 
-          <TabsContent value="prices" className="space-y-6">
-            {/* Pricing Insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <PricingInsights crop="maize" district="Kigali" currentPrice={350} />
-              <PricingInsights crop="irish_potato" district="Musanze" currentPrice={280} />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {marketPrices.map((price) => (
-                <Card key={`${price.crop}-${price.district}`}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{price.crop}</CardTitle>
-                      <Badge
-                        variant={
-                          price.trend === "up" ? "default" : price.trend === "down" ? "destructive" : "secondary"
-                        }
-                      >
-                        <TrendingUp className={`h-3 w-3 mr-1 ${price.trend === "down" ? "rotate-180" : ""}`} />
-                        {price.trend === "up" ? "Rising" : price.trend === "down" ? "Falling" : "Stable"}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{price.district} District</p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-green-600">{price.currentPrice.toLocaleString()} RWF</p>
-                      <p className="text-sm text-muted-foreground">per kg</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">{t("Weekly Change")}</p>
-                        <p className={`font-medium ${price.weeklyChange > 0 ? "text-green-600" : "text-red-600"}`}>
-                          {price.weeklyChange > 0 ? "+" : ""}
-                          {price.weeklyChange}%
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">{t("Monthly Change")}</p>
-                        <p className={`font-medium ${price.monthlyChange > 0 ? "text-green-600" : "text-red-600"}`}>
-                          {price.monthlyChange > 0 ? "+" : ""}
-                          {price.monthlyChange}%
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">{t("Demand")}</p>
-                        <Badge
-                          variant={
-                            price.demand === "High" ? "default" : price.demand === "Medium" ? "secondary" : "outline"
-                          }
+                    <div className="space-y-2 pt-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="organic"
+                          checked={filters.organicOnly}
+                          onCheckedChange={(checked: boolean | 'indeterminate') => setFilters({ ...filters, organicOnly: checked === true })}
+                        />
+                        <label
+                          htmlFor="organic"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
                           Organic Only
                         </label>
@@ -468,7 +463,7 @@ export default function MarketplacePage() {
                         <Checkbox
                           id="in-stock"
                           checked={filters.inStockOnly}
-                          onCheckedChange={(checked) => setFilters({ ...filters, inStockOnly: Boolean(checked) })}
+                          onCheckedChange={(checked: boolean | 'indeterminate') => setFilters({ ...filters, inStockOnly: checked === true })}
                         />
                         <label
                           htmlFor="in-stock"
@@ -479,14 +474,6 @@ export default function MarketplacePage() {
                       </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="p-4 bg-gray-50 rounded-lg border">
-                  <h4 className="font-medium mb-2">Need help?</h4>
-                  <p className="text-sm text-gray-600 mb-3">Our team is here to help with any questions</p>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Contact Support
-                  </Button>
                 </div>
               </div>
 
@@ -502,7 +489,7 @@ export default function MarketplacePage() {
                     </span>
                     <Select
                       value={filters.sortBy}
-                      onValueChange={(value) => setFilters({ ...filters, sortBy: value })}
+                      onValueChange={(value: string) => setFilters({ ...filters, sortBy: value })}
                     >
                       <SelectTrigger className="w-full sm:w-[180px]">
                         <div className="flex items-center">
@@ -531,13 +518,14 @@ export default function MarketplacePage() {
                         inCart={cart.has(product.id)}
                         onToggleFavorite={handleToggleFavorite}
                         onAddToCart={handleAddToCart}
+                        onContactSeller={routerToConversation}
                       />
                     ))}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg">
                     <Search className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium">{t('no_products_found')}</h3>
+                    <h3 className="text-lg font-medium">No products found</h3>
                     <p className="text-muted-foreground text-center max-w-md mt-2">
                       Try adjusting your search or filters
                     </p>
@@ -546,13 +534,13 @@ export default function MarketplacePage() {
                       className="mt-4"
                       onClick={() =>
                         setFilters({
-                          searchQuery: '',
-                          category: 'all',
-                          district: '',
+                          searchQuery: "",
+                          category: "all",
+                          district: "all",
                           priceRange: [0, 5000],
                           organicOnly: false,
                           inStockOnly: true,
-                          sortBy: 'popular',
+                          sortBy: "popular",
                         })
                       }
                     >
@@ -564,15 +552,12 @@ export default function MarketplacePage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="buyers" className="space-y-6">
-            <BuyerNetwork farmerDistrict={user?.district} />
-          </TabsContent>
+          <TabsContent value="prices" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PricingInsights crop="maize" district="Kigali" currentPrice={350} />
+              <PricingInsights crop="irish_potato" district="Musanze" currentPrice={280} />
+            </div>
 
-          <TabsContent value="catalog" className="space-y-6">
-            <ProductCatalog selectedCrop={selectedCrop} />
-          </TabsContent>
-
-          <TabsContent value="my-listings" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Market Prices</CardTitle>
@@ -597,52 +582,38 @@ export default function MarketplacePage() {
                             Weekly Change
                           </th>
                           <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                            Demand
+                            Monthly Change
                           </th>
                           <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                            Supply
+                            Trend
                           </th>
                         </tr>
                       </thead>
                       <tbody className="[&_tr:last-child]:border-0">
-                        {marketPrices.map((price) => (
-                          <tr key={price.crop} className="border-b transition-colors hover:bg-muted/50">
+                        {marketPrices.map((price, index) => (
+                          <tr key={index} className="border-b transition-colors hover:bg-muted/50">
                             <td className="p-4 align-middle font-medium">{price.crop}</td>
                             <td className="p-4 align-middle">{price.district}</td>
-                            <td className="p-4 text-right align-middle">{price.currentPrice.toLocaleString()}</td>
-                            <td
-                              className={`p-4 text-right align-middle ${
-                                Number(price.weeklyChange) > 0 ? 'text-red-500' : 'text-green-500'
-                              }`}
-                            >
-                              {price.weeklyChange}%
+                            <td className="p-4 text-right align-middle font-medium">
+                              {price.currentPrice.toLocaleString()}
+                            </td>
+                            <td className="p-4 text-right align-middle">
+                              <span className={price.weeklyChange > 0 ? "text-green-600" : "text-red-600"}>
+                                {price.weeklyChange > 0 ? "↑" : "↓"} {Math.abs(price.weeklyChange)}%
+                              </span>
+                            </td>
+                            <td className="p-4 text-right align-middle">
+                              <span className={price.monthlyChange > 0 ? "text-green-600" : "text-red-600"}>
+                                {price.monthlyChange > 0 ? "↑" : "↓"} {Math.abs(price.monthlyChange)}%
+                              </span>
                             </td>
                             <td className="p-4 text-right align-middle">
                               <Badge
-                                variant="outline"
-                                className={
-                                  price.demand === 'High'
-                                    ? 'bg-red-50 text-red-700 border-red-200'
-                                    : price.demand === 'Medium'
-                                    ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                                    : 'bg-green-50 text-green-700 border-green-200'
-                                }
+                                variant={price.trend === "up" ? "default" : "destructive"}
+                                className="gap-1"
                               >
-                                {price.demand}
-                              </Badge>
-                            </td>
-                            <td className="p-4 text-right align-middle">
-                              <Badge
-                                variant="outline"
-                                className={
-                                  price.supply === 'High'
-                                    ? 'bg-green-50 text-green-700 border-green-200'
-                                    : price.supply === 'Medium'
-                                    ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                                    : 'bg-red-50 text-red-700 border-red-200'
-                                }
-                              >
-                                {price.supply}
+                                <TrendingUp className="h-3.5 w-3.5" />
+                                {price.trend === "up" ? "Rising" : "Falling"}
                               </Badge>
                             </td>
                           </tr>
@@ -655,22 +626,36 @@ export default function MarketplacePage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="my-orders">
+          <TabsContent value="buyers" className="space-y-6">
+            <BuyerNetwork farmerDistrict={(user as any)?.district} />
+          </TabsContent>
+
+          <TabsContent value="catalog" className="space-y-6">
+            <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg">
+              <h3 className="text-lg font-medium">Product Catalog</h3>
+              <p className="text-muted-foreground text-center max-w-md mt-2">
+                Browse our catalog of agricultural products
+              </p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="my-listings" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>My Orders</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  View and manage your orders
-                </p>
+                <CardTitle>My Listings</CardTitle>
+                <p className="text-sm text-muted-foreground">Manage your product listings</p>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col items-center justify-center py-12">
+                <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg">
                   <ShoppingCart className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">No orders yet</h3>
+                  <h3 className="text-lg font-medium">No listings yet</h3>
                   <p className="text-muted-foreground text-center max-w-md mt-2">
-                    Your orders will appear here once you make a purchase
+                    You haven't listed any products yet. Start by adding your first product.
                   </p>
-                  <Button className="mt-4">Browse Products</Button>
+                  <Button className="mt-4">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Product
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -678,6 +663,5 @@ export default function MarketplacePage() {
         </Tabs>
       </div>
     </DashboardLayout>
-  );
-};
-
+  )
+}

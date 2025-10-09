@@ -10,9 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus } from "lucide-react"
 import { useTranslation } from "@/lib/i18n"
 
-interface Activity {
+export interface Activity {
   id: string
   title: string
+  // Optional crop for display context
+  crop?: string
+  description?: string
   type: "watering" | "fertilizing" | "harvesting"
   dueDate: Date
   priority: "high" | "medium" | "low"

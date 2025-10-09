@@ -3,14 +3,14 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Sprout, User, ShoppingCart } from "lucide-react"
+import { Loader2, Sprout, User, ShoppingCart, Shield } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useTranslation } from "@/lib/i18n"
 
@@ -18,12 +18,17 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [userType, setUserType] = useState<'farmer' | 'buyer' | null>(null)
+  const searchParams = useSearchParams()
+  const initialRole = (searchParams?.get("role") as 'farmer' | 'buyer' | 'admin' | null) || null
+  const [userType, setUserType] = useState<'farmer' | 'buyer' | 'admin' | null>(initialRole)
 
-  // Debug userType changes
+  // Ensure role is preselected from URL; if not present, redirect to homepage role selector
   useEffect(() => {
-    console.log("UserType changed to:", userType)
-  }, [userType])
+    if (!userType) {
+      // Guide users to select role from Get Started
+      router.push("/?selectRole=1")
+    }
+  }, [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -63,8 +68,10 @@ export default function SignUpPage() {
       setTimeout(() => {
         if (userType === 'farmer') {
           router.push("/onboarding")
+        } else if (userType === 'admin') {
+          router.push("/admin-dashboard")
         } else {
-          router.push("/dashboard")
+          router.push("/buyer-dashboard")
         }
       }, 2000)
     } catch (error: any) {
@@ -110,60 +117,14 @@ export default function SignUpPage() {
               </Alert>
             )}
 
-            {/* User Type Selection */}
-            <div className="space-y-3">
-              <Label className="text-base font-medium">{t("User Type")}</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={`h-20 flex flex-col items-center justify-center space-y-2 transition-all duration-200 ${
-                    userType === 'farmer' 
-                      ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-lg' 
-                      : 'hover:bg-green-50 border-gray-300'
-                  }`}
-                  onClick={() => {
-                    console.log("Farmer button clicked")
-                    setUserType('farmer')
-                  }}
-                  disabled={loading}
-                >
-                  <User className={`h-6 w-6 ${userType === 'farmer' ? 'text-white' : 'text-green-600'}`} />
-                  <span className={`text-sm font-medium ${userType === 'farmer' ? 'text-white' : 'text-gray-700'}`}>
-                    {t("Farmer")}
-                  </span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={`h-20 flex flex-col items-center justify-center space-y-2 transition-all duration-200 ${
-                    userType === 'buyer' 
-                      ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-lg' 
-                      : 'hover:bg-green-50 border-gray-300'
-                  }`}
-                  onClick={() => {
-                    console.log("Buyer button clicked")
-                    setUserType('buyer')
-                  }}
-                  disabled={loading}
-                >
-                  <ShoppingCart className={`h-6 w-6 ${userType === 'buyer' ? 'text-white' : 'text-green-600'}`} />
-                  <span className={`text-sm font-medium ${userType === 'buyer' ? 'text-white' : 'text-gray-700'}`}>
-                    {t("Buyer")}
-                  </span>
-                </Button>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-gray-600">
-                  {userType === 'farmer' ? t("I am a farmer") : userType === 'buyer' ? t("I am a buyer") : t("Select your role")}
+            {/* Role display (preselected from Get Started) */}
+            {userType && (
+              <div className="mb-2 text-center">
+                <p className="text-sm text-gray-700">
+                  {t("User Type")}: <span className="font-semibold capitalize">{userType}</span>
                 </p>
-                {userType && (
-                  <p className="text-xs text-green-600 font-medium mt-1">
-                    ✓ {userType === 'farmer' ? t("Farmer") : t("Buyer")} {t("selected")}
-                  </p>
-                )}
               </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="email">Email / {t("phoneNumber")}</Label>

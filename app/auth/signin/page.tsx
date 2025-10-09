@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,18 +21,38 @@ export default function SignInPage() {
   const [error, setError] = useState("")
   const { signIn } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { t, i18n } = useTranslation()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return // Prevent multiple submissions
+    
     setLoading(true)
     setError("")
 
     try {
       console.log("Attempting sign in with:", email)
-      await signIn(email, password)
-      console.log("Sign in successful, redirecting to dashboard")
-      router.push("/dashboard")
+      const user = await signIn(email, password)
+      console.log("Sign in successful, user:", user)
+      
+      if (!user) {
+        throw new Error("User not found")
+      }
+      
+      // Redirect based on user role
+      const redirectPath = user.role === 'admin' 
+        ? '/admin-dashboard'
+        : user.role === 'farmer' 
+          ? '/farmer-dashboard' 
+          : user.role === 'buyer'
+            ? '/buyer-dashboard'
+            : '/'
+            
+      console.log(`Redirecting to: ${redirectPath}`)
+      router.push(redirectPath)
+      // The component will be unmounted during navigation, so we don't need to setLoading(false)
+      return
     } catch (error: any) {
       console.error("Sign in error:", error)
       if (error.message === "Account does not exist") {
