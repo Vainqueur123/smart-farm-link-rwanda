@@ -4,14 +4,13 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Sprout, Users, TrendingUp, Shield, Globe, Smartphone } from "@/lib/lucide-react"
+import { Sprout, Users, TrendingUp, Shield, Globe, Smartphone } from "lucide-react"
 import { useTranslation } from "@/lib/i18n"
 
 export default function HomePage() {
   const router = useRouter()
   const [isInstallable, setIsInstallable] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
-  const [showRoleSelect, setShowRoleSelect] = useState(false)
   const { t, i18n } = useTranslation()
 
   useEffect(() => {
@@ -87,7 +86,7 @@ export default function HomePage() {
               {t("heroSub")}
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
-              <Button size="lg" onClick={() => setShowRoleSelect(true)} className="bg-green-600 hover:bg-green-700">
+              <Button size="lg" onClick={() => router.push("/auth/signup")} className="bg-green-600 hover:bg-green-700">
                 {t("getStarted")}
               </Button>
               <Button variant="outline" size="lg" onClick={() => {
@@ -159,7 +158,7 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl text-balance">{t("cta_title")}</h2>
             <p className="mt-4 text-lg text-gray-600 text-pretty">{t("cta_sub")}</p>
             <div className="mt-8">
-              <Button size="lg" onClick={() => setShowRoleSelect(true)} className="bg-green-600 hover:bg-green-700">
+              <Button size="lg" onClick={() => router.push("/auth/signup")} className="bg-green-600 hover:bg-green-700">
                 {t("startJourney")}
               </Button>
             </div>
@@ -167,32 +166,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Role selection overlay */}
-      {showRoleSelect && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowRoleSelect(false)} />
-          <div className="relative z-10 w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t("role_select_title")}</h3>
-            <p className="text-sm text-gray-600 mb-6">{t("role_select_sub")}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Button
-                className="bg-green-600 hover:bg-green-700"
-                onClick={() => router.push("/auth/signup?role=farmer")}
-              >
-                {t("role_farmer")}
-              </Button>
-              <Button variant="outline" onClick={() => router.push("/auth/signup?role=buyer")}>
-                {t("role_buyer")}
-              </Button>
-            </div>
-            <div className="mt-4 text-right">
-              <Button variant="ghost" size="sm" onClick={() => setShowRoleSelect(false)}>
-                {t("cancel")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

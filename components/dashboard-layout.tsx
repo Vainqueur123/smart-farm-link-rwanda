@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Home, Sprout, ShoppingCart, CreditCard, Settings, User, LogOut, Menu, Bell, Globe, BarChart2 } from "lucide-react"
+import { Home, Sprout, ShoppingCart, CreditCard, Settings, User, LogOut, Menu, Bell, Globe, BarChart2, Users, MessageSquare } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useTranslation } from "@/lib/i18n"
 import { OfflineIndicator } from "@/components/offline-indicator"
@@ -23,20 +23,51 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, farmerProfile, logout } = useAuth()
+  const { user, farmerProfile, userRole, logout } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const { t, i18n } = useTranslation()
   const currentLanguage = i18n.language
   const setLanguage = (lng: string) => i18n.changeLanguage(lng)
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "My Farm", href: "/farm", icon: Sprout },
-    { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
-    { name: "Statistics", href: "/dashboard/statistics", icon: BarChart2 },
-    { name: "Transactions", href: "/transactions", icon: CreditCard },
-    { name: "Settings", href: "/settings", icon: Settings },
-  ]
+  const getNavigation = () => {
+    if (userRole === "admin") {
+      return [
+        { name: "Admin Dashboard", href: "/admin-dashboard", icon: Home },
+        { name: "Users", href: "/admin-dashboard?tab=users", icon: Users },
+        { name: "Products", href: "/admin-dashboard?tab=products", icon: ShoppingCart },
+        { name: "Analytics", href: "/admin-dashboard?tab=analytics", icon: BarChart2 },
+        { name: "Settings", href: "/admin-dashboard?tab=settings", icon: Settings },
+      ]
+    } else if (userRole === "buyer") {
+      return [
+        { name: "Dashboard", href: "/buyer-dashboard", icon: Home },
+        { name: "Products", href: "/buyer-dashboard?tab=products", icon: ShoppingCart },
+        { name: "Farmers", href: "/buyer-dashboard?tab=farmers", icon: Users },
+        { name: "Orders", href: "/buyer-dashboard?tab=orders", icon: CreditCard },
+        { name: "Settings", href: "/settings", icon: Settings },
+      ]
+    } else if (userRole === "advisor") {
+      return [
+        { name: "Dashboard", href: "/advisor-dashboard", icon: Home },
+        { name: "Requests", href: "/advisor-dashboard?tab=requests", icon: MessageSquare },
+        { name: "Farmers", href: "/advisor-dashboard?tab=farmers", icon: Users },
+        { name: "Analytics", href: "/advisor-dashboard?tab=analytics", icon: BarChart2 },
+        { name: "Settings", href: "/settings", icon: Settings },
+      ]
+    } else {
+      // Default farmer navigation
+      return [
+        { name: "Dashboard", href: "/dashboard", icon: Home },
+        { name: "My Farm", href: "/farm", icon: Sprout },
+        { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
+        { name: "Statistics", href: "/dashboard/statistics", icon: BarChart2 },
+        { name: "Transactions", href: "/transactions", icon: CreditCard },
+        { name: "Settings", href: "/settings", icon: Settings },
+      ]
+    }
+  }
+
+  const navigation = getNavigation()
   const handleSignOut = async () => {
     await logout()
     router.push("/")

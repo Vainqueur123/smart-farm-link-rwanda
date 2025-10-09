@@ -48,7 +48,7 @@ export const auth: MockAuth = {
     const user = { 
       uid: "mock-user-id", 
       email,
-      displayName: email === "demo@smartfarm.rw" ? "Demo Farmer" : "User"
+      displayName: email === "jean.nkurunziza@smartfarm.rw" ? "Jean Baptiste Nkurunziza" : "User"
     }
     auth.currentUser = user
     // Notify listeners about sign-in
@@ -106,19 +106,30 @@ export const auth: MockAuth = {
   },
 }
 
+// Mock data storage
+const mockData: Record<string, any> = {}
+
 export const db: MockDb = {
   collection: (name: string) => ({
     doc: (id: string) => ({
       set: async (data: any) => {
         console.log("[v0] Mock Firestore set:", name, id, data)
+        mockData[`${name}/${id}`] = data
         return Promise.resolve()
       },
       get: async () => {
         console.log("[v0] Mock Firestore get:", name, id)
-        return Promise.resolve({ exists: false, data: () => null })
+        const key = `${name}/${id}`
+        const data = mockData[key]
+        return Promise.resolve({ 
+          exists: !!data, 
+          data: () => data 
+        })
       },
       update: async (data: any) => {
         console.log("[v0] Mock Firestore update:", name, id, data)
+        const key = `${name}/${id}`
+        mockData[key] = { ...mockData[key], ...data }
         return Promise.resolve()
       },
     }),
@@ -126,14 +137,20 @@ export const db: MockDb = {
   doc: (path: string) => ({
     set: async (data: any) => {
       console.log("[v0] Mock Firestore doc set:", path, data)
+      mockData[path] = data
       return Promise.resolve()
     },
     get: async () => {
       console.log("[v0] Mock Firestore doc get:", path)
-      return Promise.resolve({ exists: false, data: () => null })
+      const data = mockData[path]
+      return Promise.resolve({ 
+        exists: !!data, 
+        data: () => data 
+      })
     },
     update: async (data: any) => {
       console.log("[v0] Mock Firestore doc update:", path, data)
+      mockData[path] = { ...mockData[path], ...data }
       return Promise.resolve()
     },
   }),

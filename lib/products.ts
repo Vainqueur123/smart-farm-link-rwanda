@@ -177,7 +177,7 @@ export const sampleProducts: ProductData[] = [
     farmerName: 'Niyigena Eric',
     rating: 4.4,
     reviewCount: 31,
-    imageUrl: '/images/tomatoes.png ',
+    imageUrl: '/images/tomatoes.png',
     isOrganic: false,
     harvestDate: '2023-10-12',
     createdAt: '2023-10-14T08:45:00Z',

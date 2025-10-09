@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Droplets, Sprout, TrendingUp, CheckCircle, Clock, MapPin, Plus } from "@/lib/lucide-react"
+import { Calendar, Droplets, Sprout, TrendingUp, CheckCircle, Clock, MapPin, Plus } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { getDistrictProfile, getRecommendedCropsForDistrict } from "@/lib/districts"
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { HorizontalDashboardLayout } from "@/components/horizontal-dashboard-layout"
 import { WeatherWidget } from "@/components/weather-widget"
 import { SimpleCalendar } from "@/components/simple-calendar"
 import type { Activity } from "@/components/simple-calendar"
@@ -101,7 +101,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardLayout>
+    <HorizontalDashboardLayout>
       <div className="space-y-6">
         {/* Welcome Header */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg p-6 text-white">
@@ -412,6 +412,6 @@ export default function DashboardPage() {
           </Tabs>
         </div>
       </div>
-    </DashboardLayout>
+    </HorizontalDashboardLayout>
   )
 }

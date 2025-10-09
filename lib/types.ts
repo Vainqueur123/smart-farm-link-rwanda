@@ -149,6 +149,8 @@ export interface Product {
 
 export type Language = "rw" | "en" | "fr"
 
+export type UserRole = "farmer" | "buyer" | "advisor" | "admin"
+
 export interface FarmerProfile {
   id: string
   name?: string
@@ -166,6 +168,118 @@ export interface FarmerProfile {
   registrationDate: Date
   profileComplete: boolean
   avatar?: string
+  role: UserRole
+  email: string
+  isVerified: boolean
+  rating?: number
+  totalSales?: number
+  joinDate: Date
+}
+
+export interface BuyerProfile {
+  id: string
+  name?: string
+  phone: string
+  district: DistrictCode
+  sector: string
+  cell: string
+  village: string
+  language: Language
+  businessType: "individual" | "restaurant" | "hotel" | "supermarket" | "wholesaler" | "exporter"
+  preferredCrops: CropType[]
+  budgetRange: {
+    min: number
+    max: number
+  }
+  preferredContactMethod: "app" | "sms" | "voice"
+  registrationDate: Date
+  profileComplete: boolean
+  avatar?: string
+  role: UserRole
+  email: string
+  isVerified: boolean
+  rating?: number
+  totalPurchases?: number
+  joinDate: Date
+}
+
+export interface AdvisorProfile {
+  id: string
+  name?: string
+  phone: string
+  district: DistrictCode
+  sector: string
+  cell: string
+  village: string
+  language: Language
+  specialization: CropType[]
+  experienceYears: number
+  qualifications: string[]
+  certifications: string[]
+  preferredContactMethod: "app" | "sms" | "voice"
+  registrationDate: Date
+  profileComplete: boolean
+  avatar?: string
+  role: UserRole
+  email: string
+  isVerified: boolean
+  rating?: number
+  totalAdviceGiven?: number
+  joinDate: Date
+  hourlyRate?: number
+  availability: "available" | "busy" | "unavailable"
+}
+
+export interface AdminProfile {
+  id: string
+  name?: string
+  phone: string
+  email: string
+  role: UserRole
+  permissions: string[]
+  registrationDate: Date
+  profileComplete: boolean
+  avatar?: string
+  isVerified: boolean
+  joinDate: Date
+}
+
+export interface Notification {
+  id: string
+  userId: string
+  title: string
+  message: string
+  type: "info" | "success" | "warning" | "error" | "message"
+  isRead: boolean
+  createdAt: Date
+  actionUrl?: string
+  actionText?: string
+  relatedUserId?: string
+  relatedProductId?: string
+}
+
+export interface Message {
+  id: string
+  senderId: string
+  receiverId: string
+  content: string
+  type: "text" | "image" | "voice" | "file"
+  isRead: boolean
+  createdAt: Date
+  updatedAt: Date
+  replyToId?: string
+  attachments?: string[]
+  productId?: string
+}
+
+export interface Chat {
+  id: string
+  participants: string[]
+  lastMessage?: Message
+  lastActivity: Date
+  productId?: string
+  isActive: boolean
+  createdAt: Date
 }
 
 export interface FarmActivity {

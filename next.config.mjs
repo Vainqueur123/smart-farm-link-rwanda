@@ -27,6 +27,7 @@ export default withPWA({
   register: true,
   skipWaiting: true,
   disable: isDev,
+  buildExcludes: [/middleware-manifest\.json$/],
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/firestore\.googleapis\.com/,
