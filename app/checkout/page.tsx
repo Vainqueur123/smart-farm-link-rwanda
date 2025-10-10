@@ -1,24 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/lib/auth-context"
-import { 
-	ShoppingCart, 
-	MapPin, 
-	CreditCard, 
-	Truck, 
-	CheckCircle,
-	Package,
-	Phone,
-	Home
-} from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ShoppingCart, MapPin, Truck, CheckCircle, Package } from "lucide-react"
 
 interface CartItem {
 	id: string
@@ -30,13 +21,11 @@ interface CartItem {
 }
 
 export default function CheckoutPage() {
-	const search = useSearchParams()
 	const router = useRouter()
 	const { user, buyerProfile } = useAuth()
 	const [isProcessing, setIsProcessing] = useState(false)
 	const [orderPlaced, setOrderPlaced] = useState(false)
 	
-	// Mock cart items - in production, get from context or localStorage
 	const [cartItems] = useState<CartItem[]>([
 		{
 			id: "1",
@@ -71,17 +60,34 @@ export default function CheckoutPage() {
 
 	const handlePlaceOrder = async () => {
 		setIsProcessing(true)
-		
-		// Simulate order processing
-		setTimeout(() => {
-			setIsProcessing(false)
+		try {
+			const item = cartItems[0]
+			if (!item || !user) throw new Error("Missing item or user")
+			const body = {
+				buyerId: user.id,
+				farmerId: "seller-1",
+				productId: item.id,
+				quantity: 1,
+				address: `${deliveryInfo.district} - ${deliveryInfo.address} (${deliveryInfo.phone})`,
+				notes: null,
+				totalAmount: item.pricePerUnit * 1,
+				currency: "RWF",
+				merge: true,
+			}
+			const res = await fetch('/api/orders', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body)
+			})
+			if (!res.ok) throw new Error('Failed to place order')
 			setOrderPlaced(true)
-			
-			// Redirect to buyer dashboard after 3 seconds
-			setTimeout(() => {
-				router.push("/buyer-dashboard")
-			}, 3000)
-		}, 2000)
+		} catch (e) {
+			console.error(e)
+			alert('Could not place order. Please try again.')
+		} finally {
+			setIsProcessing(false)
+			setTimeout(() => router.push("/buyer-dashboard"), 2000)
+		}
 	}
 
 	if (orderPlaced) {
@@ -133,9 +139,7 @@ export default function CheckoutPage() {
 				</div>
 
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-					{/* Left Column - Forms */}
 					<div className="lg:col-span-2 space-y-6">
-						{/* Delivery Information */}
 						<Card>
 							<CardHeader>
 								<CardTitle className="flex items-center">
@@ -169,29 +173,48 @@ export default function CheckoutPage() {
 										value={deliveryInfo.phone}
 										onChange={(e) => setDeliveryInfo({...deliveryInfo, phone: e.target.value})}
 										placeholder="07XXXXXXXX"
+									/>
 								</div>
 							</CardContent>
 						</Card>
 
-						{/* Delivery Method */}
-						<RadioGroup value={deliveryMethod} onValueChange={setDeliveryMethod}>
-							<div className="space-y-3">
-								<RadioGroupItem value="delivery" id="delivery" />
-								<RadioGroupItem value="pickup" id="pickup" />
-							</div>
-						</RadioGroup>
+						<Card>
+							<CardHeader>
+								<CardTitle className="flex items-center">
+									<Truck className="h-5 w-5 mr-2" />
+									Delivery & Payment
+								</CardTitle>
+							</CardHeader>
+							<CardContent className="space-y-4">
+								<div>
+									<Label htmlFor="deliveryMethod">Delivery Method</Label>
+									<Select value={deliveryMethod} onValueChange={setDeliveryMethod}>
+										<SelectTrigger id="deliveryMethod">
+											<SelectValue placeholder="Select delivery method" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="delivery">Delivery</SelectItem>
+											<SelectItem value="pickup">Pickup</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+								<div>
+									<Label htmlFor="paymentMethod">Payment Method</Label>
+									<Select value={paymentMethod} onValueChange={setPaymentMethod}>
+										<SelectTrigger id="paymentMethod">
+											<SelectValue placeholder="Select payment method" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="mtn_momo">MTN MoMo</SelectItem>
+											<SelectItem value="airtel_money">Airtel Money</SelectItem>
+											<SelectItem value="cash">Cash</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+							</CardContent>
+						</Card>
+					</div>
 
-						{/* Payment Method */}
-						<RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-							<div className="space-y-3">
-								<RadioGroupItem value="mtn_momo" id="mtn" />
-								<RadioGroupItem value="airtel_money" id="airtel" />
-								<RadioGroupItem value="cash" id="cash" />
-							</div>
-						</RadioGroup>
-					</Card>
-
-					{/* Right Column - Order Summary */}
 					<div className="lg:col-span-1">
 						<Card className="sticky top-4">
 							<CardHeader>
@@ -199,8 +222,8 @@ export default function CheckoutPage() {
 									<ShoppingCart className="h-5 w-5 mr-2" />
 									Order Summary
 								</CardTitle>
+							</CardHeader>
 							<CardContent className="space-y-4">
-								{/* Cart Items */}
 								<div className="space-y-3">
 									{cartItems.map((item) => (
 										<div key={item.id} className="flex items-center space-x-3">
@@ -222,7 +245,6 @@ export default function CheckoutPage() {
 
 								<Separator />
 
-								{/* Price Breakdown */}
 								<div className="space-y-2">
 									<div className="flex justify-between text-sm">
 										<span className="text-gray-600">Subtotal</span>
@@ -271,7 +293,3 @@ export default function CheckoutPage() {
 		</div>
 	)
 }
-
-
-
-

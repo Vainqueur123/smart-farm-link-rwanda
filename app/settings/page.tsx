@@ -53,21 +53,37 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     try {
-      // In a real app, this would save to Firestore
-      console.log("Saving settings...", profileData)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Update local state to reflect changes
-      if (userProfile) {
-        // Update the user profile with new data
-        console.log("Settings saved successfully!")
-      }
-      
+      if (!user) return
+      const res = await fetch(`/api/users/${encodeURIComponent(user.id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: profileData.name,
+          phone: profileData.phone,
+          district: profileData.district,
+          language: profileData.language,
+          notifications: profileData.notifications,
+          privacy: profileData.privacy,
+        })
+      })
+      if (!res.ok) throw new Error('Failed to save settings')
       setIsEditing(false)
     } catch (error) {
       console.error("Error saving settings:", error)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    try {
+      if (!user) return
+      const ok = window.confirm("Are you sure you want to delete your account?")
+      if (!ok) return
+      const res = await fetch(`/api/users/${encodeURIComponent(user.id)}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete account')
+      // Redirect after deletion
+      window.location.href = "/auth/signin"
+    } catch (e) {
+      console.error('Delete account failed', e)
     }
   }
 
@@ -99,6 +115,11 @@ export default function SettingsPage() {
               <Button onClick={() => setIsEditing(true)}>
                 <Edit className="h-4 w-4 mr-2" />
                 {t("edit")}
+              </Button>
+            )}
+            {!isEditing && (
+              <Button variant="destructive" onClick={handleDeleteAccount}>
+                Delete Account
               </Button>
             )}
           </div>

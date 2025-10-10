@@ -303,7 +303,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userId,
           name: userData.name,
           phone: additionalData?.phone || "",
-          district: "Kicukiro",
+          district: "" as any,
           sector: "",
           cell: "",
           village: "",
@@ -328,7 +328,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           phone: additionalData?.phone,
           businessType: "individual",
           location: {
-            district: "Kicukiro",
+            district: "" as any,
             address: ""
           },
           preferredCategories: [],
@@ -367,7 +367,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    await signOut()
+    try {
+      console.log('Starting logout process...')
+      
+      // Sign out from Firebase first
+      await signOut(auth)
+      
+      // Clear all state
+      setUser(null)
+      setFarmerProfile(null)
+      setBuyerProfile(null)
+      
+      // Clear localStorage (optional - keep cart/favorites if desired)
+      // localStorage.removeItem('favorites')
+      // localStorage.removeItem('cart')
+      
+      console.log('Logout successful')
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Clear state even if signOut fails
+      setUser(null)
+      setFarmerProfile(null)
+      setBuyerProfile(null)
+      throw error
+    }
   }
 
   const updateProfile = async (profileData: Partial<FarmerProfile | BuyerProfile>) => {

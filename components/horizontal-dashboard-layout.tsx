@@ -72,8 +72,16 @@ export function HorizontalDashboardLayout({ children }: HorizontalDashboardLayou
   const navigation = getNavigation()
 
   const handleSignOut = async () => {
-    await logout()
-    router.push("/")
+    try {
+      console.log('Signing out...')
+      await logout()
+      console.log('Logout complete, redirecting...')
+      router.push("/")
+    } catch (error) {
+      console.error('Sign out error:', error)
+      // Force redirect even if logout fails
+      router.push("/")
+    }
   }
 
   const toggleLanguage = () => {
@@ -180,9 +188,9 @@ export function HorizontalDashboardLayout({ children }: HorizontalDashboardLayou
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{userProfile?.name || "User"}</p>
+                      <p className="text-sm font-medium leading-none">{userProfile?.name || user?.name || "User"}</p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {userProfile?.email || user?.email}
+                        {user?.email || ""}
                       </p>
                     </div>
                   </DropdownMenuLabel>

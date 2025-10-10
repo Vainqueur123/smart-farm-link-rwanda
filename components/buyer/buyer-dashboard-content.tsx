@@ -136,76 +136,45 @@ export function BuyerDashboardContent() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(true)
   const [isLoadingProducts, setIsLoadingProducts] = useState(true)
 
-  // Fetch orders
+  // Fetch orders and favorites from backend
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user) return;
-      
-      setIsLoadingOrders(true);
-      
+    const fetchData = async () => {
+      if (!user) return
+      setIsLoadingOrders(true)
       try {
-        // In a real app, fetch from your API
-        // const response = await fetch('/api/buyer/orders');
-        // const data = await response.json();
-        // setOrders(data.orders || []);
-        
-        // Mock data for development
-        const mockOrders: Order[] = [
-          {
-            id: "order-1",
-            buyerId: "user-1",
-            sellerId: "seller-1",
-            items: [
-              {
-                id: "item-1",
-                orderId: "order-1",
-                productId: "1",
-                productName: "Fresh Tomatoes",
-                quantity: 2,
-                unit: "kg",
-                pricePerUnit: 1000,
-                totalPrice: 2000,
-                imageUrl: "/images/tomatoes.png",
-                category: 'vegetables'
-              } as unknown as OrderItem
-            ],
-            totalAmount: 2000,
-            currency: "RWF",
-            status: "delivered",
-            paymentStatus: "paid",
-            paymentMethod: 'mobile_money' as PaymentMethod,
-            deliveryAddress: {
-              district: "Kicukiro",
-              address: "KN 123 St, Kigali",
-              contactPhone: user?.phone || ""
-            },
-            deliveryMethod: "delivery",
-            estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            actualDelivery: new Date().toISOString(),
-            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date().toISOString()
-          } as unknown as Order
-        ];
-        
-        const formattedOrders = mockOrders.map(order => ({
+        const [ordersRes, favRes] = await Promise.all([
+          fetch(`/api/orders/buyer/${encodeURIComponent(user.id)}`),
+          fetch(`/api/favorites/${encodeURIComponent(user.id)}`)
+        ])
+
+        if (!ordersRes.ok) throw new Error('Orders request failed')
+        const ordersJson = await ordersRes.json()
+        const fetchedOrders: Order[] = Array.isArray(ordersJson.orders) ? ordersJson.orders : []
+
+        const formattedOrders = fetchedOrders.map((order: any) => ({
           ...order,
-          estimatedDelivery: order.estimatedDelivery instanceof Date ? order.estimatedDelivery : new Date(order.estimatedDelivery || Date.now()),
-          actualDelivery: order.actualDelivery ? (order.actualDelivery instanceof Date ? order.actualDelivery : new Date(order.actualDelivery)) : undefined,
-          createdAt: order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt || Date.now()),
-          updatedAt: order.updatedAt instanceof Date ? order.updatedAt : new Date(order.updatedAt || Date.now())
-        }));
-        setOrders(formattedOrders);
-        setRecentOrders(formattedOrders.slice(0, 3)); // Show only 3 most recent orders
+          estimatedDelivery: order.estimatedDelivery ? new Date(order.estimatedDelivery) : undefined,
+          actualDelivery: order.actualDelivery ? new Date(order.actualDelivery) : undefined,
+          createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
+          updatedAt: order.updatedAt ? new Date(order.updatedAt) : new Date(),
+        }))
+        setOrders(formattedOrders)
+        setRecentOrders(formattedOrders.slice(0, 3))
+
+        if (!favRes.ok) throw new Error('Favorites request failed')
+        const favJson = await favRes.json()
+        const productIds: string[] = Array.isArray(favJson.favorites) ? favJson.favorites : []
+        setFavorites(new Set(productIds))
       } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError('Failed to load orders');
+        console.error('Error fetching buyer data:', err)
+        setError('Failed to load your dashboard data')
       } finally {
-        setIsLoadingOrders(false);
+        setIsLoadingOrders(false)
       }
-    };
-    
-    fetchOrders();
-  }, [user]);
+    }
+
+    fetchData()
+  }, [user])
   
   // Fetch recommended products
   useEffect(() => {
@@ -273,9 +242,20 @@ export function BuyerDashboardContent() {
     router.push('/marketplace');
   };
 
-  // View order details
-  const viewOrderDetails = (orderId: string) => {
-    router.push(`/buyer-dashboard?tab=orders&orderId=${orderId}`);
+  // View order details - Navigate to dedicated product detail page
+  const viewOrderDetails = (order: Order) => {
+    console.log('Navigating to product details for order:', order.id);
+    if (!order || !order.items || order.items.length === 0) {
+      console.error('No order or items provided');
+      return;
+    }
+    // Get the first product from the order
+    const firstProduct = order.items[0];
+    if (firstProduct && firstProduct.productId) {
+      router.push(`/product/${firstProduct.productId}`);
+    } else {
+      console.error('No product ID found in order');
+    }
   };
 
   // Reorder functionality
@@ -287,9 +267,15 @@ export function BuyerDashboardContent() {
     router.push('/marketplace?tab=cart');
   };
 
-  // Contact seller
-  const contactSeller = (sellerId: string) => {
-    router.push(`/messages/new?recipientId=${sellerId}`);
+  // Contact seller - Open messaging with seller
+  const contactSeller = (sellerId: string, sellerName?: string) => {
+    console.log('Opening conversation with seller:', sellerId);
+    if (!sellerId) {
+      console.error('No seller ID provided');
+      return;
+    }
+    // Navigate to messaging page with seller ID
+    router.push(`/messages?sellerId=${sellerId}${sellerName ? `&sellerName=${encodeURIComponent(sellerName)}` : ''}`);
   };
 
   // Format date helper
@@ -489,7 +475,7 @@ return (
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => viewOrderDetails(order.id)}
+                      onClick={() => viewOrderDetails(order)}
                       className="flex-1"
                     >
                       <Eye className="h-4 w-4 mr-1" />
@@ -498,7 +484,7 @@ return (
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => contactSeller(order.sellerId)}
+                      onClick={() => contactSeller(order.sellerId, order.items[0]?.productName)}
                       className="flex-1"
                     >
                       <MessageCircle className="h-4 w-4 mr-1" />

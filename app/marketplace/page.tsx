@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { format } from "date-fns"
 import { Search, Filter, MapPin, Star, ShoppingCart, Heart, Share2, ArrowUpDown, Plus, TrendingUp } from "lucide-react"
@@ -76,9 +76,11 @@ const ProductCard = ({
   harvestDate,
   isFavorite = false,
   inCart = false,
+  isHighlighted = false,
   onAddToCart,
   onToggleFavorite,
-  onContactSeller
+  onContactSeller,
+  onCallSeller
 }: {
   id: string
   name: string
@@ -94,14 +96,21 @@ const ProductCard = ({
   harvestDate: string
   isFavorite?: boolean
   inCart?: boolean
+  isHighlighted?: boolean
   onAddToCart?: (productId: string) => void
   onToggleFavorite?: (productId: string) => void
   onContactSeller?: (productId: string) => void
+  onCallSeller?: (productId: string) => void
 }) => {
   const { t } = useTranslation()
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    <Card 
+      id={`product-${id}`}
+      className={`h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 ${
+        isHighlighted ? 'ring-4 ring-green-500 shadow-2xl scale-105' : ''
+      }`}
+    >
       <div className="relative h-64 overflow-hidden rounded-t-lg bg-gray-50">
         <ImageWithFallback
           src={imageUrl}
@@ -170,6 +179,13 @@ const ProductCard = ({
         >
           Contact Seller
         </Button>
+        <Button
+          variant="outline"
+          className="w-full mt-2"
+          onClick={() => onCallSeller?.(id)}
+        >
+          Call
+        </Button>
       </CardFooter>
     </Card>
   )
@@ -179,6 +195,7 @@ export default function MarketplacePage() {
   const { user, farmerProfile } = useAuth()
   const { t } = useTranslation()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   // State for products and filters
   const [products, setProducts] = useState<Product[]>(sampleProducts)
@@ -186,6 +203,7 @@ export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState("browse")
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [cart, setCart] = useState<Set<string>>(new Set())
+  const [highlightedProduct, setHighlightedProduct] = useState<string | null>(null)
 
   // Initialize filters state
   const [filters, setFilters] = useState({
@@ -206,6 +224,28 @@ export default function MarketplacePage() {
     if (savedFavorites) setFavorites(new Set(JSON.parse(savedFavorites)))
     if (savedCart) setCart(new Set(JSON.parse(savedCart)))
   }, [])
+
+  // Handle product parameter from URL (for "View Details" from orders)
+  useEffect(() => {
+    const productId = searchParams.get('product')
+    if (productId) {
+      console.log('Highlighting product:', productId)
+      setHighlightedProduct(productId)
+      
+      // Scroll to the product after a short delay
+      setTimeout(() => {
+        const element = document.getElementById(`product-${productId}`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 500)
+
+      // Clear highlight after 5 seconds
+      setTimeout(() => {
+        setHighlightedProduct(null)
+      }, 5000)
+    }
+  }, [searchParams])
 
   // Save favorites and contacted farmers to localStorage when they change
   useEffect(() => {
@@ -238,10 +278,35 @@ export default function MarketplacePage() {
     setCart(newCart)
   }
 
-  const routerToConversation = (productId: string) => {
+  const routerToConversation = async (productId: string) => {
     const product = products.find(p => p.id === productId)
-    if (product) {
-      router.push(`/messages/new?productId=${product.id}&farmerId=${product.farmerId}`)
+    if (!product || !user) return
+    try {
+      const res = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ buyerId: user.id, farmerId: product.farmerId, productId: product.id })
+      })
+      if (!res.ok) throw new Error('Failed to start conversation')
+      const data = await res.json()
+      router.push(`/messages/${encodeURIComponent(data.conversationId)}`)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleCallSeller = async (productId: string) => {
+    const product = products.find(p => p.id === productId)
+    if (!product) return
+    try {
+      const res = await fetch(`/api/buyer/contact/${encodeURIComponent(product.farmerId)}`)
+      const data = await res.json()
+      const phone = data?.phone || '0785062969'
+      const text = encodeURIComponent(`Hello, I'm interested in ${product.name}.`)
+      window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${text}`, '_blank')
+    } catch (e) {
+      const text = encodeURIComponent(`Hello, I'm interested in ${product.name}.`)
+      window.open(`https://wa.me/0785062969?text=${text}`, '_blank')
     }
   }
 
@@ -521,9 +586,11 @@ export default function MarketplacePage() {
                         {...product}
                         isFavorite={favorites.has(product.id)}
                         inCart={cart.has(product.id)}
+                        isHighlighted={highlightedProduct === product.id}
                         onToggleFavorite={handleToggleFavorite}
                         onAddToCart={handleAddToCart}
                         onContactSeller={routerToConversation}
+                        onCallSeller={handleCallSeller}
                       />
                     ))}
                   </div>

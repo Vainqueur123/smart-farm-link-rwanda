@@ -5,13 +5,13 @@ import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/lib/auth-context"
 import { MessageCircle, Send, ShoppingCart } from "lucide-react"
 import { rtdb, onValue, pushValue } from "@/lib/firebase"
-import { createOrder } from "@/lib/order-service"
 import type { Order, MessageStatus } from "@/lib/types"
 import { MessageStatusIndicator } from "@/components/message-status-indicator"
-import { notifyNewMessage } from "@/lib/notification-service"
+import { notifyNewMessage, notifyOrderUpdate } from "@/lib/notification-service"
 
 interface ChatMessage {
 	id: string
@@ -31,9 +31,10 @@ export default function ConversationPage() {
 	const router = useRouter()
 	const [messages, setMessages] = useState<ChatMessage[]>([])
 	const [text, setText] = useState("")
-	const [quantity, setQuantity] = useState<number>(1)
-	const [delivery, setDelivery] = useState<string>("")
-	const [notes, setNotes] = useState<string>("")
+  const [quantity, setQuantity] = useState<number>(1)
+  const [delivery, setDelivery] = useState<string>("")
+  const [notes, setNotes] = useState<string>("")
+  const [orderOpen, setOrderOpen] = useState(false)
 	const endRef = useRef<HTMLDivElement>(null)
 
 	// Subscribe to realtime messages
@@ -128,44 +129,45 @@ export default function ConversationPage() {
 		}))
 	}
 
-	const proceedToBuy = async () => {
-		if (!user) return
-		const id = params.conversationId as string
-		const order: Order = {
-			id: `order_${Date.now()}`,
-			buyerId: user.id,
-			sellerId: "unknown",
-			items: [{ productId: id, productName: "Conversation Product", quantity, unit: "kg", pricePerUnit: 0, totalPrice: 0 }],
-			totalAmount: 0,
-			currency: "RWF",
-			status: "pending",
-			paymentStatus: "pending",
-			paymentMethod: "cash",
-			deliveryAddress: { district: "Kicukiro", address: delivery, contactPhone: "" },
-			deliveryMethod: "pickup",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		}
-		await createOrder(order)
-		router.push(`/buyer-dashboard?order=${order.id}`)
-	}
+  const proceedToBuy = async () => {
+    if (!user) return
+    const id = params.conversationId as string
+    // Attempt to derive farmerId and productId from conversationId (format buyer_farmer_product)
+    const parts = id.split('_')
+    const buyerId = user.id
+    const farmerId = parts.find(p => p !== buyerId) || "unknown"
+    const productId = parts[2] || id
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ buyerId, farmerId, productId, quantity, address: { address: delivery }, notes })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        try { await notifyOrderUpdate(buyerId, farmerId, data.order.id, 'pending') } catch {}
+        router.push(`/buyer-dashboard?order=${data.order.id}`)
+      }
+    } catch (e) {
+      console.error('Failed to create order', e)
+    }
+  }
 
-	return (
-		<div className="min-h-screen bg-white">
-			<div className="max-w-3xl mx-auto p-4">
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between">
-						<CardTitle className="flex items-center gap-2">
-							<MessageCircle className="h-5 w-5 text-green-600" />
-							Conversation
-						</CardTitle>
-						<Button onClick={() => router.back()} variant="outline">Back</Button>
-					</CardHeader>
-					<CardContent>
-						<div className="h-[60vh] overflow-y-auto space-y-3 p-2 border rounded-md bg-gray-50">
+  return (
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Header with context (Farmer/Product) */}
+      <div className="p-3 border-b bg-white flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 text-green-600" />
+          <div className="font-medium">Conversation</div>
+        </div>
+        <Button onClick={() => router.back()} variant="outline" size="sm">Back</Button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="space-y-3">
 							{messages.map(m => (
 							<div key={m.id} className={`flex ${m.senderId === user?.id ? "justify-end" : "justify-start"}`}>
-								<div className={`max-w-[75%] px-3 py-2 rounded-lg ${m.senderId === user?.id ? "bg-green-600 text-white" : "bg-white border"}`}>
+                <div className={`max-w-[75%] px-3 py-2 rounded-lg ${m.senderId === user?.id ? "bg-green-600 text-white" : "bg-white border"}`}>
 									<div className="text-sm whitespace-pre-wrap mb-1">{m.content}</div>
 									<div className="flex items-center justify-between gap-2 mt-1">
 										<div className="text-xs opacity-70">{m.senderName}</div>
@@ -182,25 +184,43 @@ export default function ConversationPage() {
 								</div>
 							</div>
 						))}
-							<div ref={endRef} />
-						</div>
+            <div ref={endRef} />
+        </div>
+      </div>
+      <div className="p-2 border-t bg-white">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+          <input className="border rounded px-2 py-2 text-sm" placeholder="Quantity" type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
+          <input className="border rounded px-2 py-2 text-sm" placeholder="Delivery location (optional)" value={delivery} onChange={(e) => setDelivery(e.target.value)} />
+          <input className="border rounded px-2 py-2 text-sm md:col-span-3" placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a message..." onKeyDown={(e) => { if (e.key === 'Enter') send() }} />
+          <Button onClick={send}><Send className="h-4 w-4 mr-1" />Send</Button>
+          {user?.role === 'buyer' && (
+            <Button variant="outline" onClick={() => setOrderOpen(true)}>
+              <ShoppingCart className="h-4 w-4 mr-1" />Proceed to Buy
+            </Button>
+          )}
+        </div>
+      </div>
 
-						<div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
-							<input className="border rounded px-2 py-2 text-sm" placeholder="Quantity" type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
-							<input className="border rounded px-2 py-2 text-sm" placeholder="Delivery location (optional)" value={delivery} onChange={(e) => setDelivery(e.target.value)} />
-							<input className="border rounded px-2 py-2 text-sm md:col-span-3" placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
-						</div>
-
-						<div className="mt-3 flex items-center gap-2">
-							<Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" onKeyDown={(e) => { if (e.key === 'Enter') send() }} />
-							<Button onClick={send}><Send className="h-4 w-4 mr-1" />Send</Button>
-							<Button variant="outline" onClick={proceedToBuy}>
-								<ShoppingCart className="h-4 w-4 mr-1" />Proceed to Buy
-							</Button>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
-		</div>
-	)
+      <Dialog open={orderOpen} onOpenChange={setOrderOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <input className="border rounded px-2 py-2 text-sm w-full" placeholder="Quantity" type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
+            <input className="border rounded px-2 py-2 text-sm w-full" placeholder="Delivery address" value={delivery} onChange={(e) => setDelivery(e.target.value)} />
+            <input className="border rounded px-2 py-2 text-sm w-full" placeholder="Delivery notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOrderOpen(false)}>Cancel</Button>
+            <Button onClick={() => { setOrderOpen(false); proceedToBuy() }}>Place Order</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
 }
+

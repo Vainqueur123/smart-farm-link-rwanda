@@ -64,8 +64,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   
   const navigation = getNavigation()
   const handleSignOut = async () => {
-    await logout()
-    router.push("/")
+    try {
+      console.log('Signing out...')
+      await logout()
+      console.log('Logout complete, redirecting...')
+      router.push("/")
+    } catch (error) {
+      console.error('Sign out error:', error)
+      // Force redirect even if logout fails
+      router.push("/")
+    }
   }
 
   const toggleLanguage = () => {
@@ -211,7 +219,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </Button>
 
               {/* Messaging Widget */}
-              {(isFarmer() || isBuyer()) && <MessagingWidget />}
+              {(isFarmer() || isBuyer()) && (
+                <Button variant="ghost" size="sm" onClick={() => router.push('/messages')}>
+                  <Bell className="h-4 w-4 mr-2" /> Messages
+                </Button>
+              )}
 
               {/* Notifications */}
               <NotificationSystem />
@@ -228,14 +240,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>{t("My Account")}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>{t("Profile")}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>{t("Settings")}</span>
-                  </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(isBuyer() ? '/buyer-dashboard?tab=profile' : '/farmer-dashboard?tab=profile')}>
+                <User className="mr-2 h-4 w-4" />
+                <span>{t("Profile")}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>{t("Settings")}</span>
+              </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />

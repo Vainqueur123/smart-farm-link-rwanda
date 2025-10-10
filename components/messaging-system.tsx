@@ -25,141 +25,23 @@ import { format, formatDistanceToNow } from "date-fns"
 import { MessageStatusIndicator } from "@/components/message-status-indicator"
 import { notifyNewMessage } from "@/lib/notification-service"
 
-// Mock data for messaging
-const mockConversations: Conversation[] = [
-  {
-    id: "1",
-    participants: ["farmer-1", "buyer-1"],
-    lastMessage: {
-      id: "msg-1",
-      senderId: "buyer-1",
-      receiverId: "farmer-1",
-      content: "Hi, I'm interested in your tomatoes. Are they still available?",
-      type: "text",
-      isRead: true,
-      status: "seen" as MessageStatus,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 1000),
-      seenAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5000),
-    },
-    unreadCount: 0,
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-  },
-  {
-    id: "2",
-    participants: ["farmer-2", "buyer-1"],
-    lastMessage: {
-      id: "msg-2",
-      senderId: "farmer-2",
-      receiverId: "buyer-1",
-      content: "The potatoes will be ready for harvest next week.",
-      type: "text",
-      isRead: false,
-      status: "delivered" as MessageStatus,
-      createdAt: new Date(Date.now() - 30 * 60 * 1000),
-      sentAt: new Date(Date.now() - 30 * 60 * 1000),
-      deliveredAt: new Date(Date.now() - 30 * 60 * 1000 + 2000),
-    },
-    unreadCount: 1,
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 30 * 60 * 1000),
-  }
-]
+// Mock data for messaging - Empty by default, conversations created when user sends messages
+const mockConversations: Conversation[] = []
 
-const mockMessages: Record<string, Message[]> = {
-  "1": [
-    {
-      id: "msg-1",
-      senderId: "buyer-1",
-      receiverId: "farmer-1",
-      content: "Hi, I'm interested in your tomatoes. Are they still available?",
-      type: "text",
-      isRead: true,
-      status: "seen" as MessageStatus,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 1000),
-      seenAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5000),
-    },
-    {
-      id: "msg-2",
-      senderId: "farmer-1",
-      receiverId: "buyer-1",
-      content: "Yes, I have 50kg available. Freshly harvested yesterday.",
-      type: "text",
-      isRead: true,
-      status: "seen" as MessageStatus,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000),
-      sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000),
-      deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000 + 1000),
-      seenAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000 + 3000),
-    },
-    {
-      id: "msg-3",
-      senderId: "buyer-1",
-      receiverId: "farmer-1",
-      content: "Great! What's your price per kg?",
-      type: "text",
-      isRead: true,
-      status: "seen" as MessageStatus,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000),
-      sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000),
-      deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000 + 2000),
-      seenAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000 + 6000),
-    },
-    {
-      id: "msg-4",
-      senderId: "farmer-1",
-      receiverId: "buyer-1",
-      content: "800 RWF per kg. I can deliver to Kigali.",
-      type: "text",
-      isRead: false,
-      status: "delivered" as MessageStatus,
-      createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-      sentAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-      deliveredAt: new Date(Date.now() - 1 * 60 * 60 * 1000 + 1500),
-    }
-  ],
-  "2": [
-    {
-      id: "msg-5",
-      senderId: "buyer-1",
-      receiverId: "farmer-2",
-      content: "When will your potatoes be ready?",
-      type: "text",
-      isRead: true,
-      status: "seen" as MessageStatus,
-      createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-      sentAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-      deliveredAt: new Date(Date.now() - 1 * 60 * 60 * 1000 + 1000),
-      seenAt: new Date(Date.now() - 1 * 60 * 60 * 1000 + 4000),
-    },
-    {
-      id: "msg-6",
-      senderId: "farmer-2",
-      receiverId: "buyer-1",
-      content: "The potatoes will be ready for harvest next week.",
-      type: "text",
-      isRead: false,
-      status: "delivered" as MessageStatus,
-      createdAt: new Date(Date.now() - 30 * 60 * 1000),
-      sentAt: new Date(Date.now() - 30 * 60 * 1000),
-      deliveredAt: new Date(Date.now() - 30 * 60 * 1000 + 2000),
-    }
-  ]
-}
+const mockMessages: Record<string, Message[]> = {}
 
 interface MessagingSystemProps {
   className?: string
+  sellerId?: string
+  autoOpen?: boolean
 }
 
-export function MessagingSystem({ className }: MessagingSystemProps) {
+export function MessagingSystem({ className, sellerId, autoOpen = false }: MessagingSystemProps) {
   const { user } = useAuth()
   const [conversations, setConversations] = useState<Conversation[]>(mockConversations)
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
+  const [allMessages, setAllMessages] = useState<Record<string, Message[]>>(mockMessages)
   const [newMessage, setNewMessage] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -172,21 +54,48 @@ export function MessagingSystem({ className }: MessagingSystemProps) {
     scrollToBottom()
   }, [messages])
 
+  // Auto-open conversation with specific seller
+  useEffect(() => {
+    if (sellerId && autoOpen && user) {
+      // Find or create conversation with this seller
+      const existingConv = conversations.find(conv => 
+        conv.participants.includes(sellerId) && conv.participants.includes(user.id)
+      )
+      
+      if (existingConv) {
+        setSelectedConversation(existingConv.id)
+      } else {
+        // Create new conversation
+        const newConvId = `conv_${Date.now()}`
+        const newConversation: Conversation = {
+          id: newConvId,
+          participants: [user.id, sellerId],
+          unreadCount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+        setConversations(prev => [newConversation, ...prev])
+        setAllMessages(prev => ({ ...prev, [newConvId]: [] }))
+        setSelectedConversation(newConvId)
+      }
+    }
+  }, [sellerId, autoOpen, user, conversations])
+
   useEffect(() => {
     if (selectedConversation) {
-      setMessages(mockMessages[selectedConversation] || [])
+      setMessages(allMessages[selectedConversation] || [])
       
       // Mark messages as seen when conversation is opened
       setTimeout(() => {
         markConversationAsSeen(selectedConversation)
       }, 1000)
     }
-  }, [selectedConversation])
+  }, [selectedConversation, allMessages])
 
   const markConversationAsSeen = (conversationId: string) => {
     if (!user) return
     
-    setMessages(prev => prev.map(msg => {
+    const updateFn = (msg: Message) => {
       // Only mark messages from other participants as seen
       if (msg.senderId !== user.id && msg.status !== "seen") {
         return {
@@ -197,6 +106,14 @@ export function MessagingSystem({ className }: MessagingSystemProps) {
         }
       }
       return msg
+    }
+
+    setMessages(prev => prev.map(updateFn))
+    
+    // Also update allMessages
+    setAllMessages(prev => ({
+      ...prev,
+      [conversationId]: (prev[conversationId] || []).map(updateFn)
     }))
 
     // Update conversation unread count
@@ -223,7 +140,12 @@ export function MessagingSystem({ className }: MessagingSystemProps) {
       createdAt: now,
     }
 
+    // Update both messages state and allMessages record
     setMessages(prev => [...prev, message])
+    setAllMessages(prev => ({
+      ...prev,
+      [selectedConversation]: [...(prev[selectedConversation] || []), message]
+    }))
     setNewMessage("")
 
     // Send notification to recipient (SMS/Email)
@@ -257,7 +179,7 @@ export function MessagingSystem({ className }: MessagingSystemProps) {
   }
 
   const updateMessageStatus = (messageId: string, status: MessageStatus, baseTime: Date) => {
-    setMessages(prev => prev.map(msg => {
+    const updateFn = (msg: Message) => {
       if (msg.id === messageId) {
         const updated = { ...msg, status }
         if (status === "sent" && !msg.sentAt) {
@@ -271,7 +193,28 @@ export function MessagingSystem({ className }: MessagingSystemProps) {
         return updated
       }
       return msg
-    }))
+    }
+
+    setMessages(prev => prev.map(updateFn))
+    
+    // Also update allMessages
+    if (selectedConversation) {
+      setAllMessages(prev => ({
+        ...prev,
+        [selectedConversation]: (prev[selectedConversation] || []).map(updateFn)
+      }))
+
+      // Update conversation's lastMessage if this is the last message
+      setConversations(prevConvs => prevConvs.map(conv => {
+        if (conv.id === selectedConversation && conv.lastMessage?.id === messageId) {
+          return {
+            ...conv,
+            lastMessage: updateFn(conv.lastMessage)
+          }
+        }
+        return conv
+      }))
+    }
   }
 
   const getOtherParticipant = (conversationId: string): string => {
@@ -281,13 +224,19 @@ export function MessagingSystem({ className }: MessagingSystemProps) {
   }
 
   const getParticipantName = (participantId: string): string => {
-    // In a real app, this would fetch from user data
+    // Try to get name from auth context first
+    if (user && user.id === participantId) {
+      return user.name || user.email || "You"
+    }
+    
+    // In a real app, this would fetch from user database
+    // For now, return a placeholder based on ID
     const names: Record<string, string> = {
       "farmer-1": "John Doe",
       "farmer-2": "Jane Smith",
       "buyer-1": "Mike Johnson",
     }
-    return names[participantId] || "Unknown User"
+    return names[participantId] || `Seller ${participantId.slice(-4)}`
   }
 
   const getParticipantRole = (participantId: string): string => {
@@ -349,9 +298,17 @@ export function MessagingSystem({ className }: MessagingSystemProps) {
                   <p className="text-xs text-gray-500 mb-1">
                     {getParticipantRole(getOtherParticipant(conversation.id))}
                   </p>
-                  <p className="text-sm text-gray-600 truncate">
-                    {conversation.lastMessage?.content}
-                  </p>
+                  <div className="flex items-center gap-1">
+                    {conversation.lastMessage?.senderId === user?.id && conversation.lastMessage && (
+                      <MessageStatusIndicator 
+                        status={conversation.lastMessage.status} 
+                        className="flex-shrink-0"
+                      />
+                    )}
+                    <p className="text-sm text-gray-600 truncate flex-1">
+                      {conversation.lastMessage?.content}
+                    </p>
+                  </div>
                   <p className="text-xs text-gray-400 mt-1">
                     {conversation.lastMessage && formatDistanceToNow(conversation.lastMessage.createdAt, { addSuffix: true })}
                   </p>
