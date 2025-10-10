@@ -109,7 +109,7 @@ const ProductCard = ({
       id={`product-${id}`}
       className={`h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 ${
         isHighlighted ? 'ring-4 ring-green-500 shadow-2xl scale-105' : ''
-      }`}
+      } w-full max-w-xl mx-auto p-6`}
     >
       <div className="relative h-64 overflow-hidden rounded-t-lg bg-gray-50">
         <ImageWithFallback
@@ -164,29 +164,32 @@ const ProductCard = ({
           )}
         </div>
       </CardContent>
-      <CardFooter className="pt-0 gap-2">
-        {/* <Button
-          variant={inCart ? "outline" : "default"}
-          className="w-20px"
-          onClick={() => onAddToCart?.(id)}
-        >
-          {inCart ? "In Cart" : "Add Cart"}
-        </Button> */}
-        <Button
-          variant="outline"
-          className="w-full mt-2"
-          onClick={() => onContactSeller?.(id)}
-        >
-          Contact Seller
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full mt-2"
-          onClick={() => onCallSeller?.(id)}
-        >
-          Call
-        </Button>
-      </CardFooter>
+      <CardFooter className="pt-0 gap-1 flex-nowrap">
+  {/* <Button
+    size="sm"
+    variant={inCart ? "outline" : "default"}
+    className="w-20 min-w-20 px-2"
+    onClick={() => onAddToCart?.(id)}
+  >
+    {inCart ? "In Cart" : "Add Cart"}
+  </Button> */}
+  <Button
+    size="sm"
+    variant="outline"
+    className="w-28 min-w-24 px-2"
+    onClick={() => onContactSeller?.(id)}
+  >
+    Contact
+  </Button>
+  <Button
+    size="sm"
+    variant="outline"
+    className="w-20 min-w-20 px-2"
+    onClick={() => onCallSeller?.(id)}
+  >
+    WhatsApp
+  </Button>
+</CardFooter>
     </Card>
   )
 }
@@ -432,7 +435,7 @@ export default function MarketplacePage() {
           </TabsList>
 
           <TabsContent value="browse" className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+            <div className="flex flex-col md:flex-row gap-6 md:gap-8 md:items-start">
               {/* Filters Sidebar */}
               <div className="w-full md:w-72 lg:w-80 space-y-6 md:sticky md:top-24 self-start">
                 <div className="space-y-4">
@@ -579,7 +582,7 @@ export default function MarketplacePage() {
                 </div>
 
                 {filteredProducts.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 gap-8">
                     {filteredProducts.map((product) => (
                       <ProductCard
                         key={product.id}
