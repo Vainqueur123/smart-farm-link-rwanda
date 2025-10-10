@@ -18,6 +18,7 @@ import { useTranslation } from "@/lib/i18n"
 import { OfflineIndicator } from "@/components/offline-indicator"
 import { MessagingWidget } from "@/components/messaging-system"
 import { PerformanceMonitor } from "@/components/performance-monitor"
+import { NotificationSystem } from "@/components/notification-system"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -213,9 +214,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               {(isFarmer() || isBuyer()) && <MessagingWidget />}
 
               {/* Notifications */}
-              <Button variant="ghost" size="sm">
-                <Bell className="h-5 w-5" />
-              </Button>
+              <NotificationSystem />
 
               {/* Profile dropdown */}
               <DropdownMenu>

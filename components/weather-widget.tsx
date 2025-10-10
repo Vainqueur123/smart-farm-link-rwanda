@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Cloud, Sun, CloudRain, Droplets, Wind, Thermometer } from "lucide-react"
+import { useTranslation } from "@/lib/i18n"
 import type { DistrictCode } from "@/lib/types"
 
 interface WeatherWidgetProps {
@@ -25,6 +26,7 @@ interface WeatherData {
 }
 
 export function WeatherWidget({ district }: WeatherWidgetProps) {
+  const { t } = useTranslation()
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -37,7 +39,7 @@ export function WeatherWidget({ district }: WeatherWidgetProps) {
       windSpeed: Math.floor(Math.random() * 15) + 5, // 5-20 km/h
       condition: ["sunny", "cloudy", "rainy"][Math.floor(Math.random() * 3)] as "sunny" | "cloudy" | "rainy",
       forecast: Array.from({ length: 5 }, (_, i) => ({
-        day: ["Today", "Tomorrow", "Wed", "Thu", "Fri"][i],
+        day: [t("today"), t("tomorrow"), t("wednesday"), t("thursday"), t("friday")][i],
         condition: ["sunny", "cloudy", "rainy"][Math.floor(Math.random() * 3)] as "sunny" | "cloudy" | "rainy",
         temp: Math.floor(Math.random() * 8) + 22,
         rain: Math.floor(Math.random() * 15),
@@ -65,13 +67,13 @@ export function WeatherWidget({ district }: WeatherWidgetProps) {
 
   const getWeatherAlert = (weather: WeatherData) => {
     if (weather.rainfall > 15) {
-      return { type: "warning", message: "Heavy rain expected - protect crops" }
+      return { type: "warning", message: t("heavy_rain_alert") }
     }
     if (weather.temperature > 28) {
-      return { type: "info", message: "Hot weather - increase watering" }
+      return { type: "info", message: t("hot_weather_alert") }
     }
     if (weather.humidity < 40) {
-      return { type: "info", message: "Low humidity - monitor soil moisture" }
+      return { type: "info", message: t("low_humidity_alert") }
     }
     return null
   }
@@ -80,7 +82,7 @@ export function WeatherWidget({ district }: WeatherWidgetProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Weather</CardTitle>
+          <CardTitle>{t("weather")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-3">
@@ -101,10 +103,10 @@ export function WeatherWidget({ district }: WeatherWidgetProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          Weather
+          {t("weather")}
           {getWeatherIcon(weather.condition)}
         </CardTitle>
-        <CardDescription>{district} District</CardDescription>
+        <CardDescription>{district} {t("district")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Current conditions */}
@@ -140,7 +142,7 @@ export function WeatherWidget({ district }: WeatherWidgetProps) {
 
         {/* 5-day forecast */}
         <div>
-          <h4 className="text-sm font-medium mb-2">5-Day Forecast</h4>
+          <h4 className="text-sm font-medium mb-2">{t("five_day_forecast")}</h4>
           <div className="space-y-2">
             {weather.forecast.map((day, index) => (
               <div key={index} className="flex items-center justify-between text-sm">

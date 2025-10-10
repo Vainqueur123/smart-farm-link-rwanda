@@ -28,7 +28,8 @@ import {
   Clock,
   Star,
   MapPin,
-  Calendar
+  Calendar,
+  User
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
@@ -234,6 +235,15 @@ export default function FarmerDashboardPage() {
         ? { ...order, status: status as any, updatedAt: new Date() }
         : order
     ))
+  }
+
+  const handleContactBuyer = (buyerId: string) => {
+    router.push(`/messages/new?recipientId=${buyerId}`)
+  }
+
+  const handleViewOrderDetails = (orderId: string) => {
+    setActiveTab("orders")
+    // In a real app, you might want to open a modal or navigate to a detailed view
   }
 
   return (
@@ -715,15 +725,28 @@ export default function FarmerDashboardPage() {
                           ))}
                         </div>
 
-                        <div className="flex items-center justify-between pt-4 border-t">
+                        <div className="space-y-3 pt-4 border-t">
                           <div className="text-sm text-gray-600">
                             <p>{t("Delivery")}: {order.deliveryMethod}</p>
                             <p>{t("Payment")}: {order.paymentMethod.replace('_', ' ')}</p>
                             {order.estimatedDelivery && (
                               <p>{t("Estimated Delivery")}: {format(order.estimatedDelivery, "MMM d, yyyy")}</p>
                             )}
+                            <p>{t("Delivery Address")}: {order.deliveryAddress.address}</p>
+                            <p>{t("Contact")}: {order.deliveryAddress.contactPhone}</p>
                           </div>
-                          <div className="flex space-x-2">
+                          
+                          {/* Action buttons */}
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleContactBuyer(order.buyerId)}
+                            >
+                              <User className="h-4 w-4 mr-1" />
+                              {t("Contact Buyer")}
+                            </Button>
+                            
                             {order.status === "pending" && (
                               <>
                                 <Button
@@ -750,6 +773,15 @@ export default function FarmerDashboardPage() {
                               >
                                 <Package className="h-4 w-4 mr-1" />
                                 {t("Mark as Shipped")}
+                              </Button>
+                            )}
+                            {order.status === "shipped" && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleOrderStatusUpdate(order.id, "delivered")}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                {t("Mark as Delivered")}
                               </Button>
                             )}
                           </div>
@@ -827,7 +859,7 @@ export default function FarmerDashboardPage() {
                     <h2 className="text-2xl font-bold">{t("Farm Profile")}</h2>
                     <p className="text-gray-600">{t("Manage your farm information and settings")}</p>
                   </div>
-                  <Button>
+                  <Button onClick={() => router.push('/settings')}>
                     <Edit className="h-4 w-4 mr-2" />
                     {t("Edit Profile")}
                   </Button>

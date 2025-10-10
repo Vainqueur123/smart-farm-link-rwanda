@@ -17,10 +17,13 @@ import {
   MoreVertical,
   Check,
   CheckCheck,
-  Clock
+  Clock,
+  Info
 } from "lucide-react"
-import { Message, Conversation } from "@/lib/types"
+import { Message, Conversation, MessageStatus } from "@/lib/types"
 import { format, formatDistanceToNow } from "date-fns"
+import { MessageStatusIndicator } from "@/components/message-status-indicator"
+import { notifyNewMessage } from "@/lib/notification-service"
 
 // Mock data for messaging
 const mockConversations: Conversation[] = [
@@ -34,7 +37,11 @@ const mockConversations: Conversation[] = [
       content: "Hi, I'm interested in your tomatoes. Are they still available?",
       type: "text",
       isRead: true,
+      status: "seen" as MessageStatus,
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 1000),
+      seenAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5000),
     },
     unreadCount: 0,
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
@@ -50,7 +57,10 @@ const mockConversations: Conversation[] = [
       content: "The potatoes will be ready for harvest next week.",
       type: "text",
       isRead: false,
+      status: "delivered" as MessageStatus,
       createdAt: new Date(Date.now() - 30 * 60 * 1000),
+      sentAt: new Date(Date.now() - 30 * 60 * 1000),
+      deliveredAt: new Date(Date.now() - 30 * 60 * 1000 + 2000),
     },
     unreadCount: 1,
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
@@ -67,7 +77,11 @@ const mockMessages: Record<string, Message[]> = {
       content: "Hi, I'm interested in your tomatoes. Are they still available?",
       type: "text",
       isRead: true,
+      status: "seen" as MessageStatus,
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 1000),
+      seenAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5000),
     },
     {
       id: "msg-2",
@@ -76,7 +90,11 @@ const mockMessages: Record<string, Message[]> = {
       content: "Yes, I have 50kg available. Freshly harvested yesterday.",
       type: "text",
       isRead: true,
+      status: "seen" as MessageStatus,
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000),
+      sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000),
+      deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000 + 1000),
+      seenAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000 + 3000),
     },
     {
       id: "msg-3",
@@ -85,7 +103,11 @@ const mockMessages: Record<string, Message[]> = {
       content: "Great! What's your price per kg?",
       type: "text",
       isRead: true,
+      status: "seen" as MessageStatus,
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000),
+      sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000),
+      deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000 + 2000),
+      seenAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000 + 6000),
     },
     {
       id: "msg-4",
@@ -94,7 +116,10 @@ const mockMessages: Record<string, Message[]> = {
       content: "800 RWF per kg. I can deliver to Kigali.",
       type: "text",
       isRead: false,
+      status: "delivered" as MessageStatus,
       createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      sentAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      deliveredAt: new Date(Date.now() - 1 * 60 * 60 * 1000 + 1500),
     }
   ],
   "2": [
@@ -105,7 +130,11 @@ const mockMessages: Record<string, Message[]> = {
       content: "When will your potatoes be ready?",
       type: "text",
       isRead: true,
+      status: "seen" as MessageStatus,
       createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      sentAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      deliveredAt: new Date(Date.now() - 1 * 60 * 60 * 1000 + 1000),
+      seenAt: new Date(Date.now() - 1 * 60 * 60 * 1000 + 4000),
     },
     {
       id: "msg-6",
@@ -114,7 +143,10 @@ const mockMessages: Record<string, Message[]> = {
       content: "The potatoes will be ready for harvest next week.",
       type: "text",
       isRead: false,
+      status: "delivered" as MessageStatus,
       createdAt: new Date(Date.now() - 30 * 60 * 1000),
+      sentAt: new Date(Date.now() - 30 * 60 * 1000),
+      deliveredAt: new Date(Date.now() - 30 * 60 * 1000 + 2000),
     }
   ]
 }
@@ -143,24 +175,73 @@ export function MessagingSystem({ className }: MessagingSystemProps) {
   useEffect(() => {
     if (selectedConversation) {
       setMessages(mockMessages[selectedConversation] || [])
+      
+      // Mark messages as seen when conversation is opened
+      setTimeout(() => {
+        markConversationAsSeen(selectedConversation)
+      }, 1000)
     }
   }, [selectedConversation])
 
-  const handleSendMessage = () => {
+  const markConversationAsSeen = (conversationId: string) => {
+    if (!user) return
+    
+    setMessages(prev => prev.map(msg => {
+      // Only mark messages from other participants as seen
+      if (msg.senderId !== user.id && msg.status !== "seen") {
+        return {
+          ...msg,
+          status: "seen" as MessageStatus,
+          isRead: true,
+          seenAt: new Date()
+        }
+      }
+      return msg
+    }))
+
+    // Update conversation unread count
+    setConversations(prev => prev.map(conv =>
+      conv.id === conversationId
+        ? { ...conv, unreadCount: 0 }
+        : conv
+    ))
+  }
+
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation || !user) return
 
+    const now = new Date()
+    const recipientId = getOtherParticipant(selectedConversation)
     const message: Message = {
       id: `msg-${Date.now()}`,
       senderId: user.id,
-      receiverId: getOtherParticipant(selectedConversation),
+      receiverId: recipientId,
       content: newMessage.trim(),
       type: "text",
       isRead: false,
-      createdAt: new Date(),
+      status: "waiting" as MessageStatus,
+      createdAt: now,
     }
 
     setMessages(prev => [...prev, message])
     setNewMessage("")
+
+    // Send notification to recipient (SMS/Email)
+    try {
+      await notifyNewMessage(user.id, recipientId, message.content)
+    } catch (error) {
+      console.error("Failed to send notification:", error)
+    }
+
+    // Simulate message status progression
+    // In production, these would be triggered by server/Firebase events
+    setTimeout(() => {
+      updateMessageStatus(message.id, "sent", now)
+    }, 500)
+
+    setTimeout(() => {
+      updateMessageStatus(message.id, "delivered", now)
+    }, 2000)
 
     // Update conversation
     setConversations(prev => prev.map(conv => 
@@ -173,6 +254,24 @@ export function MessagingSystem({ className }: MessagingSystemProps) {
           }
         : conv
     ))
+  }
+
+  const updateMessageStatus = (messageId: string, status: MessageStatus, baseTime: Date) => {
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId) {
+        const updated = { ...msg, status }
+        if (status === "sent" && !msg.sentAt) {
+          updated.sentAt = new Date(baseTime.getTime() + 500)
+        } else if (status === "delivered" && !msg.deliveredAt) {
+          updated.deliveredAt = new Date(baseTime.getTime() + 2000)
+        } else if (status === "seen" && !msg.seenAt) {
+          updated.seenAt = new Date()
+          updated.isRead = true
+        }
+        return updated
+      }
+      return msg
+    }))
   }
 
   const getOtherParticipant = (conversationId: string): string => {
@@ -319,13 +418,10 @@ export function MessagingSystem({ className }: MessagingSystemProps) {
                         {formatMessageTime(message.createdAt)}
                       </span>
                       {message.senderId === user?.id && (
-                        <div className="flex items-center">
-                          {message.isRead ? (
-                            <CheckCheck className="h-3 w-3 opacity-70" />
-                          ) : (
-                            <Check className="h-3 w-3 opacity-70" />
-                          )}
-                        </div>
+                        <MessageStatusIndicator 
+                          status={message.status} 
+                          className={message.senderId === user?.id ? "text-white opacity-70" : ""}
+                        />
                       )}
                     </div>
                   </div>

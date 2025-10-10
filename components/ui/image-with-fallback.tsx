@@ -13,7 +13,9 @@ export function ImageWithFallback({
   fallbackSrc = '/placeholder-product.png',
   ...props
 }: ImageWithFallbackProps) {
-  const [imgSrc, setImgSrc] = useState(src || fallbackSrc)
+  // Trim any whitespace from the source URL
+  const cleanSrc = typeof src === 'string' ? src.trim() : src
+  const [imgSrc, setImgSrc] = useState(cleanSrc || fallbackSrc)
   
   return (
     <Image

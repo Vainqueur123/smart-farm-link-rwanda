@@ -1,98 +1,115 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { HorizontalDashboardLayout } from "@/components/horizontal-dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Bell, Globe, Smartphone, Wifi, Shield, Download, Trash2, RefreshCw } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { 
+  User, 
+  Bell, 
+  Shield, 
+  Globe, 
+  Smartphone, 
+  Mail, 
+  MapPin, 
+  Save,
+  Edit,
+  Eye,
+  EyeOff
+} from "lucide-react"
 import { useTranslation } from "@/lib/i18n"
-import { offlineService } from "@/lib/offline-service"
 
 export default function SettingsPage() {
-  const { user, farmerProfile } = useAuth()
+  const { user, userProfile, userRole } = useAuth()
   const { t, i18n } = useTranslation()
-  const currentLanguage = i18n.language
-  const setLanguage = (lng: string) => i18n.changeLanguage(lng)
-  const [settings, setSettings] = useState({
+  const [isEditing, setIsEditing] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [activeTab, setActiveTab] = useState("profile")
+
+  const [profileData, setProfileData] = useState({
+    name: userProfile?.name || "",
+    email: user?.email || "",
+    phone: userProfile?.phone || "",
+    district: (userProfile as any)?.district || "",
+    language: i18n.language || "rw",
     notifications: {
-      marketAlerts: true,
-      paymentUpdates: true,
-      weatherUpdates: true,
-      farmingTips: false,
-      smsBackup: true,
-    },
-    offline: {
-      autoSync: true,
-      cacheImages: true,
-      offlineMode: true,
-      syncFrequency: 30, // minutes
+      email: true,
+      push: true,
+      sms: false,
     },
     privacy: {
-      shareLocation: true,
-      publicProfile: false,
-      dataCollection: true,
-    },
+      profileVisible: true,
+      contactVisible: true,
+      locationVisible: false,
+    }
   })
-  const [cacheSize, setCacheSize] = useState("0 MB")
-  const [offlineItems, setOfflineItems] = useState(0)
 
-  useEffect(() => {
-    loadCacheInfo()
-  }, [])
-
-  const loadCacheInfo = async () => {
-    // Mock cache size calculation
-    setCacheSize("12.5 MB")
-
-    const pendingData = await offlineService.getPendingData()
-    setOfflineItems(pendingData.length)
+  const handleSave = async () => {
+    try {
+      // In a real app, this would save to Firestore
+      console.log("Saving settings...", profileData)
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Update local state to reflect changes
+      if (userProfile) {
+        // Update the user profile with new data
+        console.log("Settings saved successfully!")
+      }
+      
+      setIsEditing(false)
+    } catch (error) {
+      console.error("Error saving settings:", error)
+    }
   }
 
-  const handleSettingChange = (category: string, setting: string, value: boolean | string) => {
-    setSettings((prev) => ({
-      ...prev,
-      [category]: {
-        ...prev[category as keyof typeof prev],
-        [setting]: value,
-      },
-    }))
+  const handleLanguageChange = (language: string) => {
+    i18n.changeLanguage(language)
+    setProfileData(prev => ({ ...prev, language: language as "rw" | "en" }))
   }
-
-  const clearCache = async () => {
-    // In real implementation, this would clear IndexedDB cache
-    console.log("[v0] Clearing offline cache")
-    setCacheSize("0 MB")
-  }
-
-  const forceSync = async () => {
-    await offlineService.syncPendingData()
-    await loadCacheInfo()
-  }
-
-  
 
   return (
-    <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-balance">{t("Settings")}</h1>
-          <p className="text-muted-foreground text-pretty">{t("Manage your account and app preferences")}</p>
+    <HorizontalDashboardLayout>
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t("settings")}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t("manage_your_account_settings")}</p>
+          </div>
+          <div className="flex gap-2">
+            {isEditing ? (
+              <>
+                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                  {t("cancel")}
+                </Button>
+                <Button onClick={handleSave}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {t("save")}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => setIsEditing(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                {t("edit")}
+              </Button>
+            )}
+          </div>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile">{t("Profile")}</TabsTrigger>
-            <TabsTrigger value="notifications">{t("Notifications")}</TabsTrigger>
-            
-            <TabsTrigger value="offline">{t("Offline")}</TabsTrigger>
-            <TabsTrigger value="privacy">{t("Privacy")}</TabsTrigger>
+            <TabsTrigger value="profile">{t("profile")}</TabsTrigger>
+            <TabsTrigger value="notifications">{t("notifications")}</TabsTrigger>
+            <TabsTrigger value="privacy">{t("privacy")}</TabsTrigger>
+            <TabsTrigger value="security">{t("security")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
@@ -100,29 +117,49 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  {t("Profile Information")}
+                  {t("profile_information")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>{t("Phone Number")}</Label>
-                    <Input value={farmerProfile?.phone || ""} disabled />
+                  <div>
+                    <Label htmlFor="name">{t("full_name")}</Label>
+                    <Input
+                      id="name"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                      disabled={!isEditing}
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label>{t("District")}</Label>
-                    <Input value={farmerProfile?.district || ""} disabled />
+                  <div>
+                    <Label htmlFor="email">{t("email")}</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileData.email}
+                      disabled
+                      className="bg-gray-50"
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label>{t("Sector")}</Label>
-                    <Input value={farmerProfile?.sector || ""} disabled />
+                  <div>
+                    <Label htmlFor="phone">{t("phone_number")}</Label>
+                    <Input
+                      id="phone"
+                      value={profileData.phone}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                      disabled={!isEditing}
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label>{t("Farm Size")}</Label>
-                    <Input value={`${farmerProfile?.farmSize || 0} hectares`} disabled />
+                  <div>
+                    <Label htmlFor="district">{t("district")}</Label>
+                    <Input
+                      id="district"
+                      value={profileData.district}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, district: e.target.value }))}
+                      disabled={!isEditing}
+                    />
                   </div>
                 </div>
-                <Button variant="outline">{t("Edit Profile")}</Button>
               </CardContent>
             </Card>
 
@@ -130,33 +167,22 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="h-5 w-5" />
-                  {t("Language Settings")}
+                  {t("language_preferences")}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("App Language")}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {t("Choose your preferred language for the app interface")}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={currentLanguage === "en" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setLanguage("en")}
-                    >
-                      English
-                    </Button>
-                    <Button
-                      variant={currentLanguage === "rw" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setLanguage("rw")}
-                    >
-                      Kinyarwanda
-                    </Button>
-                  </div>
+              <CardContent>
+                <div>
+                  <Label htmlFor="language">{t("preferred_language")}</Label>
+                  <Select value={profileData.language} onValueChange={handleLanguageChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rw">Kinyarwanda</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="fr">Français</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
@@ -167,169 +193,54 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bell className="h-5 w-5" />
-                  {t("Notification Preferences")}
+                  {t("notification_preferences")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Market Price Alerts")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Get notified when crop prices change in your district")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.notifications.marketAlerts}
-                      onCheckedChange={(checked) => handleSettingChange("notifications", "marketAlerts", checked)}
-                    />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{t("email_notifications")}</Label>
+                    <p className="text-sm text-gray-500">{t("receive_notifications_via_email")}</p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Payment Updates")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Receive notifications about payment status changes")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.notifications.paymentUpdates}
-                      onCheckedChange={(checked) => handleSettingChange("notifications", "paymentUpdates", checked)}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Weather Updates")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Get weather forecasts and farming recommendations")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.notifications.weatherUpdates}
-                      onCheckedChange={(checked) => handleSettingChange("notifications", "weatherUpdates", checked)}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Farming Tips")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Receive helpful farming tips and best practices")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.notifications.farmingTips}
-                      onCheckedChange={(checked) => handleSettingChange("notifications", "farmingTips", checked)}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("SMS Backup")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Receive important notifications via SMS when offline")}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={settings.notifications.smsBackup}
-                        onCheckedChange={(checked) => handleSettingChange("notifications", "smsBackup", checked)}
-                      />
-                      <Badge variant="secondary">
-                        <Smartphone className="h-3 w-3 mr-1" />
-                        {t("SMS")}
-                      </Badge>
-                    </div>
-                  </div>
+                  <Switch
+                    checked={profileData.notifications.email}
+                    onCheckedChange={(checked) => 
+                      setProfileData(prev => ({
+                        ...prev,
+                        notifications: { ...prev.notifications, email: checked }
+                      }))
+                    }
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          
-
-          <TabsContent value="offline" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wifi className="h-5 w-5" />
-                  {t("Offline & Sync Settings")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Offline Mode")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Allow the app to work without internet connection")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.offline.offlineMode}
-                      onCheckedChange={(checked) => handleSettingChange("offline", "offlineMode", checked)}
-                    />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{t("push_notifications")}</Label>
+                    <p className="text-sm text-gray-500">{t("receive_push_notifications")}</p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Auto Sync")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Automatically sync data when connection is available")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.offline.autoSync}
-                      onCheckedChange={(checked) => handleSettingChange("offline", "autoSync", checked)}
-                    />
+                  <Switch
+                    checked={profileData.notifications.push}
+                    onCheckedChange={(checked) => 
+                      setProfileData(prev => ({
+                        ...prev,
+                        notifications: { ...prev.notifications, push: checked }
+                      }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{t("sms_notifications")}</Label>
+                    <p className="text-sm text-gray-500">{t("receive_sms_notifications")}</p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Cache Images")}</p>
-                      <p className="text-sm text-muted-foreground">{t("Download images for offline viewing")}</p>
-                    </div>
-                    <Switch
-                      checked={settings.offline.cacheImages}
-                      onCheckedChange={(checked) => handleSettingChange("offline", "cacheImages", checked)}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{t("Storage Used")}</p>
-                        <p className="text-sm text-muted-foreground">{t("Offline data and cache")}</p>
-                      </div>
-                      <Badge variant="outline">{cacheSize}</Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{t("Pending Sync Items")}</p>
-                        <p className="text-sm text-muted-foreground">{t("Data waiting to be synced")}</p>
-                      </div>
-                      <Badge variant={offlineItems > 0 ? "secondary" : "outline"}>
-                        {offlineItems} {t("items")}
-                      </Badge>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={forceSync}>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        {t("Sync Now")}
-                      </Button>
-                      <Button variant="outline" onClick={clearCache}>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        {t("Clear Cache")}
-                      </Button>
-                    </div>
-                  </div>
+                  <Switch
+                    checked={profileData.notifications.sms}
+                    onCheckedChange={(checked) => 
+                      setProfileData(prev => ({
+                        ...prev,
+                        notifications: { ...prev.notifications, sms: checked }
+                      }))
+                    }
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -340,67 +251,115 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5" />
-                  {t("Privacy & Security")}
+                  {t("privacy_settings")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Share Location")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Allow the app to use your location for district-specific features")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.privacy.shareLocation}
-                      onCheckedChange={(checked) => handleSettingChange("privacy", "shareLocation", checked)}
-                    />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{t("profile_visibility")}</Label>
+                    <p className="text-sm text-gray-500">{t("make_profile_visible_to_other_users")}</p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Public Profile")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Make your farmer profile visible to other users")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.privacy.publicProfile}
-                      onCheckedChange={(checked) => handleSettingChange("privacy", "publicProfile", checked)}
-                    />
+                  <Switch
+                    checked={profileData.privacy.profileVisible}
+                    onCheckedChange={(checked) => 
+                      setProfileData(prev => ({
+                        ...prev,
+                        privacy: { ...prev.privacy, profileVisible: checked }
+                      }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{t("contact_visibility")}</Label>
+                    <p className="text-sm text-gray-500">{t("show_contact_information")}</p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{t("Data Collection")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Allow anonymous usage data collection to improve the app")}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.privacy.dataCollection}
-                      onCheckedChange={(checked) => handleSettingChange("privacy", "dataCollection", checked)}
-                    />
+                  <Switch
+                    checked={profileData.privacy.contactVisible}
+                    onCheckedChange={(checked) => 
+                      setProfileData(prev => ({
+                        ...prev,
+                        privacy: { ...prev.privacy, contactVisible: checked }
+                      }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{t("location_visibility")}</Label>
+                    <p className="text-sm text-gray-500">{t("show_location_information")}</p>
                   </div>
+                  <Switch
+                    checked={profileData.privacy.locationVisible}
+                    onCheckedChange={(checked) => 
+                      setProfileData(prev => ({
+                        ...prev,
+                        privacy: { ...prev.privacy, locationVisible: checked }
+                      }))
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <Button variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      {t("Download My Data")}
+          <TabsContent value="security" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  {t("security_settings")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="current-password">{t("current_password")}</Label>
+                  <div className="relative">
+                    <Input
+                      id="current-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter current password"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </Button>
-                    <p className="text-xs text-muted-foreground">
-                      {t("Download a copy of all your data stored in Smart Farm Link")}
-                    </p>
                   </div>
                 </div>
+                <div>
+                  <Label htmlFor="new-password">{t("new_password")}</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    placeholder="Enter new password"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirm-password">{t("confirm_password")}</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    placeholder="Confirm new password"
+                  />
+                </div>
+                <Button className="w-full">
+                  {t("update_password")}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
+    </HorizontalDashboardLayout>
   )
 }

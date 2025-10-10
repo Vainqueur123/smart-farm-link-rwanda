@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, MapPin, User, Sprout, Settings } from "@/lib/lucide-react"
+import { Loader2, MapPin, User, Sprout, Settings } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import { sampleProducts } from "@/lib/products"
 import { getDistrictsByProvince } from "@/lib/districts"
 import type { DistrictCode, Province, CropType, Language } from "@/lib/types"
 import { doc, setDoc, updateDoc, db } from "@/lib/firebase"
@@ -20,7 +21,7 @@ import { useTranslation } from "@/lib/i18n"
 const STEPS = [
   { id: 1, title: "Personal Info", icon: User },
   { id: 2, title: "Location", icon: MapPin },
-  { id: 3, title: "Farm Details", icon: Sprout },
+  { id: 3, title: "Step 3", icon: Sprout },
   { id: 4, title: "Preferences", icon: Settings },
 ]
 
@@ -43,7 +44,7 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const { user, updateProfile } = useAuth()
+  const { user, updateProfile, userRole } = useAuth()
   const router = useRouter()
   const { t, i18n } = useTranslation()
 
@@ -62,6 +63,10 @@ export default function OnboardingPage() {
     hasSmartphone: true,
     preferredContactMethod: "app" as "app" | "sms" | "voice",
   })
+
+  // Buyer-specific: allow selecting farmers to follow/contact during signup
+  const [selectedFarmerIds, setSelectedFarmerIds] = useState<Set<string>>(new Set())
+  const isBuyer = userRole === "buyer"
 
   const [selectedProvince, setSelectedProvince] = useState<Province | "">("")
 
@@ -142,6 +147,7 @@ export default function OnboardingPage() {
       case 2:
         return formData.district && formData.sector && formData.cell && formData.village
       case 3:
+        if (isBuyer) return true
         return formData.farmSize && formData.primaryCrops.length > 0 && formData.experienceLevel
       case 4:
         return true
@@ -181,11 +187,14 @@ export default function OnboardingPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{STEPS[currentStep - 1].title}</CardTitle>
+            <CardTitle>
+              {currentStep === 3 && isBuyer ? "Explore Farmers" : currentStep === 3 ? "Farm Details" : STEPS[currentStep - 1].title}
+            </CardTitle>
             <CardDescription>
               {currentStep === 1 && "Let's start with your basic information"}
               {currentStep === 2 && "Tell us where your farm is located"}
-              {currentStep === 3 && "Share details about your farming activities"}
+              {currentStep === 3 && !isBuyer && "Share details about your farming activities"}
+              {currentStep === 3 && isBuyer && "Browse farmers and crops to connect with"}
               {currentStep === 4 && "Set your preferences for the best experience"}
             </CardDescription>
           </CardHeader>
@@ -311,7 +320,7 @@ export default function OnboardingPage() {
             )}
 
             {/* Step 3: Farm Details */}
-            {currentStep === 3 && (
+              {currentStep === 3 && !isBuyer && (
               <div className="space-y-6">
                 <div>
                   <Label htmlFor="farmSize">Farm Size (hectares)</Label>
@@ -363,6 +372,65 @@ export default function OnboardingPage() {
                 </div>
               </div>
             )}
+
+              {/* Step 3 for Buyer: Explore Farmers and Crops */}
+              {currentStep === 3 && isBuyer && (
+                <div className="space-y-4">
+                  <div className="text-sm text-gray-600">
+                    Discover farmers near you and the crops they sell. Select farmers to follow; you can contact them any time.
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {Array.from(
+                      new Map(
+                        sampleProducts.map((p) => [p.farmerId, { farmerId: p.farmerId, farmerName: p.farmerName, district: p.district }])
+                      ).values()
+                    ).map((farmer) => {
+                      const isSelected = selectedFarmerIds.has(farmer.farmerId)
+                      const crops = sampleProducts
+                        .filter((p) => p.farmerId === farmer.farmerId)
+                        .map((p) => p.name)
+                        .slice(0, 4)
+                      return (
+                        <Card key={farmer.farmerId} className={`transition-shadow ${isSelected ? "ring-2 ring-green-600" : ""}`}>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base">{farmer.farmerName}</CardTitle>
+                            <CardDescription className="text-xs">{farmer.district}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <div className="flex flex-wrap gap-1 mb-3">
+                              {crops.map((c) => (
+                                <span key={c} className="text-xs bg-gray-100 px-2 py-0.5 rounded">
+                                  {c}
+                                </span>
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant={isSelected ? "default" : "outline"}
+                                className="flex-1"
+                                onClick={() => {
+                                  setSelectedFarmerIds((prev) => {
+                                    const next = new Set(prev)
+                                    if (next.has(farmer.farmerId)) next.delete(farmer.farmerId)
+                                    else next.add(farmer.farmerId)
+                                    return next
+                                  })
+                                }}
+                              >
+                                {isSelected ? "Following" : "Follow"}
+                              </Button>
+                              <Button type="button" className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => router.push("/buyer-dashboard")}>
+                                View
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
             {/* Step 4: Preferences */}
             {currentStep === 4 && (

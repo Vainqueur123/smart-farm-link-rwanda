@@ -15,26 +15,30 @@ import { useAuth } from "@/lib/auth-context"
 import { useTranslation } from "@/lib/i18n"
 
 export default function SignUpPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { signUp } = useAuth()
+  const { t, i18n } = useTranslation()
+  
+  const [name, setName] = useState("")
+  const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const searchParams = useSearchParams()
   const initialRole = (searchParams?.get("role") as 'farmer' | 'buyer' | 'admin' | null) || null
   const [userType, setUserType] = useState<'farmer' | 'buyer' | 'admin' | null>(initialRole)
-
-  // Ensure role is preselected from URL; if not present, redirect to homepage role selector
-  useEffect(() => {
-    if (!userType) {
-      // Guide users to select role from Get Started
-      router.push("/?selectRole=1")
-    }
-  }, [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const { signUp } = useAuth()
-  const router = useRouter()
-  const { t, i18n } = useTranslation()
+  const [enableNotifications, setEnableNotifications] = useState(true)
+
+  // Ensure role is preselected from URL; if not present, redirect to homepage role selector
+  useEffect(() => {
+    if (!userType && !initialRole) {
+      // Guide users to select role from Get Started
+      router.push("/")
+    }
+  }, [userType, initialRole, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,27 +64,44 @@ export default function SignUpPage() {
       return
     }
 
+    if (!name.trim()) {
+      setError("Please enter your full name")
+      setLoading(false)
+      return
+    }
+
+    if (!phone.trim() || phone.length < 10) {
+      setError("Please enter a valid phone number (at least 10 digits)")
+      setLoading(false)
+      return
+    }
+
     try {
-      await signUp(email, password, userType)
+      const user = await signUp(email, password, userType, {
+        name: name.trim(),
+        phone: phone.trim(),
+        enableNotifications
+      })
       setSuccess(t("Account created successfully") + "! " + t("Welcome! Your account has been created"))
       
-      // Redirect after a short delay to show success message
+      // Redirect immediately - user is now logged in
       setTimeout(() => {
         if (userType === 'farmer') {
           router.push("/onboarding")
         } else if (userType === 'admin') {
           router.push("/admin-dashboard")
-        } else {
+        } else if (userType === 'buyer') {
           router.push("/buyer-dashboard")
+        } else {
+          router.push("/dashboard")
         }
-      }, 2000)
+      }, 1500)
     } catch (error: any) {
       if (error.message === "Account already exists") {
         setError(t("Account already exists") + ". " + t("An account with this email already exists") + ". " + t("Please try logging in instead"))
       } else {
         setError(error.message || "Failed to create account")
       }
-    } finally {
       setLoading(false)
     }
   }
@@ -127,7 +148,34 @@ export default function SignUpPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email / {t("phoneNumber")}</Label>
+              <Label htmlFor="name">{t("Full Name")} *</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">{t("Phone Number")} *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+250 7XX XXX XXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                disabled={loading}
+              />
+              <p className="text-xs text-gray-500">Used for SMS notifications when you receive messages</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">{t("Email Address")} *</Label>
               <Input
                 id="email"
                 type="email"
@@ -162,6 +210,19 @@ export default function SignUpPage() {
                 required
                 disabled={loading}
               />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="notifications"
+                checked={enableNotifications}
+                onChange={(e) => setEnableNotifications(e.target.checked)}
+                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+              <Label htmlFor="notifications" className="text-sm font-normal cursor-pointer">
+                {t("Enable SMS & Email notifications for new messages")}
+              </Label>
             </div>
 
             <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading || !userType}>

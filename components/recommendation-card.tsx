@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "@/lib/i18n"
-import type { LucideIcon } from "@/lib/lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 interface RecommendationCardProps {
   title: string

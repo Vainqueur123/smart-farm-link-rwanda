@@ -102,7 +102,7 @@ const ProductCard = ({
 
   return (
     <Card className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <div className="relative h-48 overflow-hidden rounded-t-lg bg-gray-50">
+      <div className="relative h-64 overflow-hidden rounded-t-lg bg-gray-50">
         <ImageWithFallback
           src={imageUrl}
           alt={name}
@@ -176,7 +176,7 @@ const ProductCard = ({
 }
 
 export default function MarketplacePage() {
-  const { user } = useAuth()
+  const { user, farmerProfile } = useAuth()
   const { t } = useTranslation()
   const router = useRouter()
 
@@ -207,7 +207,7 @@ export default function MarketplacePage() {
     if (savedCart) setCart(new Set(JSON.parse(savedCart)))
   }, [])
 
-  // Save favorites and cart to localStorage when they change
+  // Save favorites and contacted farmers to localStorage when they change
   useEffect(() => {
     localStorage.setItem("favorites", JSON.stringify(Array.from(favorites)))
   }, [favorites])
@@ -299,7 +299,7 @@ export default function MarketplacePage() {
             return (b.reviewCount * b.rating) - (a.reviewCount * a.rating)
         }
       })
-  }, [filters])
+  }, [filters, products])
 
   // Generate market prices from products
   const marketPrices = useMemo(() => {
@@ -346,10 +346,15 @@ export default function MarketplacePage() {
               Browse and purchase fresh produce directly from local farmers
             </p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            List Your Product
-          </Button>
+          {user?.role === "farmer" && (
+            <Button 
+              onClick={() => router.push('/farm')}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              List Your Product
+            </Button>
+          )}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -362,9 +367,9 @@ export default function MarketplacePage() {
           </TabsList>
 
           <TabsContent value="browse" className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col md:flex-row gap-6 md:gap-8">
               {/* Filters Sidebar */}
-              <div className="w-full md:w-64 space-y-6">
+              <div className="w-full md:w-72 lg:w-80 space-y-6 md:sticky md:top-24 self-start">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <h3 className="font-medium flex items-center">
@@ -661,6 +666,7 @@ export default function MarketplacePage() {
             </Card>
           </TabsContent>
         </Tabs>
+
       </div>
     </DashboardLayout>
   )

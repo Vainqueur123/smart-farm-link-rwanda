@@ -111,6 +111,9 @@ export const auth: MockAuth = {
   },
 }
 
+// Mock data storage
+const mockData: Record<string, any> = {}
+
 export const db: MockDb = {
   collection: (name: string) => ({
     doc: (id: string) => ({

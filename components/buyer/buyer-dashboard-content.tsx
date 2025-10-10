@@ -17,7 +17,8 @@ import {
   MessageCircle,
   History,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useTranslation } from "@/lib/i18n"
@@ -268,6 +269,27 @@ export function BuyerDashboardContent() {
     const newCart = new Set(cart);
     newCart.add(productId);
     setCart(newCart);
+    // Navigate to marketplace with the product
+    router.push('/marketplace');
+  };
+
+  // View order details
+  const viewOrderDetails = (orderId: string) => {
+    router.push(`/buyer-dashboard?tab=orders&orderId=${orderId}`);
+  };
+
+  // Reorder functionality
+  const handleReorder = (order: Order) => {
+    // Add all items from the order to cart
+    order.items.forEach(item => {
+      addToCart(item.productId);
+    });
+    router.push('/marketplace?tab=cart');
+  };
+
+  // Contact seller
+  const contactSeller = (sellerId: string) => {
+    router.push(`/messages/new?recipientId=${sellerId}`);
   };
 
   // Format date helper
@@ -431,7 +453,7 @@ return (
             <div className="space-y-6">
               {orders.map((order) => (
                 <div key={order.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex justify-between items-center mb-4">
                     <div>
                       <p className="font-medium">Order #{order.id.substring(0, 8)}</p>
                       <p className="text-sm text-muted-foreground">
@@ -444,6 +466,54 @@ return (
                                   order.status === 'cancelled' ? 'destructive' : 'outline'}>
                       {order.status}
                     </Badge>
+                  </div>
+                  
+                  {/* Order items */}
+                  <div className="mb-4 space-y-2">
+                    {order.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <span>{item.productName} x {item.quantity}</span>
+                        <span className="font-medium">RWF {item.totalPrice.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Total */}
+                  <div className="flex justify-between items-center pt-3 border-t mb-4">
+                    <span className="font-medium">Total</span>
+                    <span className="font-bold text-lg">RWF {order.totalAmount.toLocaleString()}</span>
+                  </div>
+                  
+                  {/* Action buttons */}
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => viewOrderDetails(order.id)}
+                      className="flex-1"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Details
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => contactSeller(order.sellerId)}
+                      className="flex-1"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-1" />
+                      Contact Seller
+                    </Button>
+                    {order.status === 'delivered' && (
+                      <Button 
+                        size="sm"
+                        onClick={() => handleReorder(order)}
+                        className="flex-1"
+                      >
+                        <ShoppingCart className="h-4 w-4 mr-1" />
+                        Reorder
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

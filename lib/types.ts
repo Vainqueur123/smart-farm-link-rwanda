@@ -149,7 +149,7 @@ export interface Product {
 
 export type Language = "rw" | "en" | "fr"
 
-export type UserRole = "farmer" | "buyer" | "admin"
+export type UserRole = "farmer" | "buyer" | "admin" | "advisor"
 
 export interface User {
   id: string
@@ -180,6 +180,7 @@ export interface FarmerProfile {
   experienceLevel: "beginner" | "intermediate" | "expert"
   hasSmartphone: boolean
   preferredContactMethod: "app" | "sms" | "voice"
+  notificationsEnabled?: boolean
   registrationDate: Date
   profileComplete: boolean
   avatar?: string
@@ -219,6 +220,7 @@ export interface BuyerProfile {
     delivery: boolean
     maxDistance: number // in km
   }
+  notificationsEnabled?: boolean
   registrationDate: Date
   profileComplete: boolean
   avatar?: string
@@ -315,6 +317,8 @@ export interface Transaction {
   notes?: string
 }
 
+export type MessageStatus = 'waiting' | 'sent' | 'delivered' | 'seen'
+
 export interface Message {
   id: string
   senderId: string
@@ -324,7 +328,11 @@ export interface Message {
   content: string
   type: "text" | "image" | "file"
   isRead: boolean
+  status: MessageStatus
   createdAt: Date
+  sentAt?: Date
+  deliveredAt?: Date
+  seenAt?: Date
   attachments?: string[]
 }
 

@@ -17,13 +17,44 @@ import {
 } from "./firebase"
 import type { User, UserRole, FarmerProfile, BuyerProfile } from "./types"
 
+// Extended profile types for advisor and admin roles
+interface AdvisorProfile {
+  id: string
+  userId: string
+  name?: string
+  phone?: string
+  district: string
+  registrationDate: Date
+  joinDate?: Date
+  profileComplete: boolean
+}
+
+interface AdminProfile {
+  id: string
+  userId: string
+  name?: string
+  phone?: string
+  district?: string
+  registrationDate: Date
+  joinDate?: Date
+  profileComplete: boolean
+}
+
+interface SignUpData {
+  name: string
+  phone: string
+  enableNotifications?: boolean
+}
+
 interface AuthContextType {
   user: User | null
+  userProfile: FarmerProfile | BuyerProfile | AdvisorProfile | AdminProfile | null
   farmerProfile: FarmerProfile | null
   buyerProfile: BuyerProfile | null
+  userRole: UserRole | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<User | null>
-  signUp: (email: string, password: string, userType: UserRole) => Promise<void>
+  signUp: (email: string, password: string, userType: UserRole, additionalData?: SignUpData) => Promise<User>
   logout: () => Promise<void>
   updateProfile: (profile: Partial<FarmerProfile | BuyerProfile>) => Promise<void>
   refreshProfile: () => Promise<void>
@@ -38,8 +69,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [userProfile, setUserProfile] = useState<FarmerProfile | BuyerProfile | AdvisorProfile | AdminProfile | null>(null)
   const [farmerProfile, setFarmerProfile] = useState<FarmerProfile | null>(null)
   const [buyerProfile, setBuyerProfile] = useState<BuyerProfile | null>(null)
+  const [advisorProfile, setAdvisorProfile] = useState<AdvisorProfile | null>(null)
+  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null)
+  const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -88,13 +123,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadFarmerProfile = async (userId: string) => {
     try {
-      const profileDoc = await getDoc(doc(db, `farmers/${userId}`))
-      if (profileDoc && (profileDoc as any).exists) {
-        const data = typeof (profileDoc as any).data === "function" ? (profileDoc as any).data() : (profileDoc as any)
-        setFarmerProfile({
+      // Try to load from different collections based on user role
+      const farmerDoc = await getDoc(doc(db, `farmers/${userId}`))
+      const buyerDoc = await getDoc(doc(db, `buyers/${userId}`))
+      const advisorDoc = await getDoc(doc(db, `advisors/${userId}`))
+      const adminDoc = await getDoc(doc(db, `admins/${userId}`))
+
+      if (farmerDoc && (farmerDoc as any).exists) {
+        const data = typeof (farmerDoc as any).data === "function" ? (farmerDoc as any).data() : (farmerDoc as any)
+        const profile: FarmerProfile = {
           ...data,
           registrationDate: data.registrationDate?.toDate?.() || data.registrationDate || new Date(),
-        } as FarmerProfile)
+          joinDate: data.joinDate?.toDate?.() || data.joinDate || new Date(),
+        } as FarmerProfile
+        setUserProfile(profile)
+        setFarmerProfile(profile)
+        setUserRole("farmer")
+      } else if (buyerDoc && (buyerDoc as any).exists) {
+        const data = typeof (buyerDoc as any).data === "function" ? (buyerDoc as any).data() : (buyerDoc as any)
+        const profile: BuyerProfile = {
+          ...data,
+          registrationDate: data.registrationDate?.toDate?.() || data.registrationDate || new Date(),
+          joinDate: data.joinDate?.toDate?.() || data.joinDate || new Date(),
+        } as BuyerProfile
+        setUserProfile(profile)
+        setBuyerProfile(profile)
+        setUserRole("buyer")
+      } else if (advisorDoc && (advisorDoc as any).exists) {
+        const data = typeof (advisorDoc as any).data === "function" ? (advisorDoc as any).data() : (advisorDoc as any)
+        const profile: AdvisorProfile = {
+          ...data,
+          registrationDate: data.registrationDate?.toDate?.() || data.registrationDate || new Date(),
+          joinDate: data.joinDate?.toDate?.() || data.joinDate || new Date(),
+        } as AdvisorProfile
+        setUserProfile(profile)
+        setAdvisorProfile(profile)
+        setUserRole("advisor")
+      } else if (adminDoc && (adminDoc as any).exists) {
+        const data = typeof (adminDoc as any).data === "function" ? (adminDoc as any).data() : (adminDoc as any)
+        const profile: AdminProfile = {
+          ...data,
+          registrationDate: data.registrationDate?.toDate?.() || data.registrationDate || new Date(),
+          joinDate: data.joinDate?.toDate?.() || data.joinDate || new Date(),
+        } as AdminProfile
+        setUserProfile(profile)
+        setAdminProfile(profile)
+        setUserRole("admin")
       } else {
         // No farmer profile found - user needs to complete onboarding
         setFarmerProfile(null)
@@ -127,7 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // In a real app, this would check Firebase Auth or your database
       // For mock purposes, we'll simulate checking existing accounts
       const existingAccounts = [
-        'demo@smartfarm.rw',
+        'jean.nkurunziza@smartfarm.rw',
         'farmer@example.com',
         'buyer@example.com'
       ]
@@ -194,7 +268,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string, userType: UserRole) => {
+  const signUp = async (email: string, password: string, userType: UserRole, additionalData?: SignUpData): Promise<User> => {
     try {
       // Check if account already exists
       const accountExists = await checkAccountExists(email)
@@ -210,7 +284,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: userId,
         email,
         role: userType,
-        name: email.split('@')[0], // Use email prefix as default name
+        name: additionalData?.name || email.split('@')[0],
+        phone: additionalData?.phone,
         isActive: true,
         isVerified: false,
         createdAt: new Date(),
@@ -220,12 +295,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await setDoc(doc(db, `users/${userId}`), userData)
       
       // Create role-specific profile
+      let createdProfile: FarmerProfile | BuyerProfile | null = null
+      
       if (userType === 'farmer') {
         const farmerProfile: FarmerProfile = {
           id: userId,
           userId,
           name: userData.name,
-          phone: "",
+          phone: additionalData?.phone || "",
           district: "Kicukiro",
           sector: "",
           cell: "",
@@ -236,15 +313,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           experienceLevel: "beginner",
           hasSmartphone: true,
           preferredContactMethod: "app",
+          notificationsEnabled: additionalData?.enableNotifications ?? true,
           registrationDate: new Date(),
           profileComplete: false,
         }
         await setDoc(doc(db, `farmers/${userId}`), farmerProfile)
+        setFarmerProfile(farmerProfile)
+        createdProfile = farmerProfile
       } else if (userType === 'buyer') {
         const buyerProfile: BuyerProfile = {
           id: userId,
           userId,
           name: userData.name,
+          phone: additionalData?.phone,
           businessType: "individual",
           location: {
             district: "Kicukiro",
@@ -261,13 +342,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             delivery: false,
             maxDistance: 10
           },
+          notificationsEnabled: additionalData?.enableNotifications ?? true,
           registrationDate: new Date(),
           profileComplete: false,
         }
         await setDoc(doc(db, `buyers/${userId}`), buyerProfile)
+        setBuyerProfile(buyerProfile)
+        createdProfile = buyerProfile
       }
       
-      console.log(`User ${email} signed up as ${userType}`)
+      // Set user state immediately after signup
+      setUser(userData)
+      setUserProfile(createdProfile)
+      setUserRole(userType)
+      
+      console.log(`User ${email} signed up as ${userType} and automatically logged in`)
+      return userData
     } catch (error: any) {
       if (error.message === "Account already exists") {
         throw new Error("Account already exists")
@@ -323,8 +413,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     user,
+    userProfile,
     farmerProfile,
     buyerProfile,
+    userRole,
     loading,
     signIn,
     signUp,

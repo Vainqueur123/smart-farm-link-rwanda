@@ -111,7 +111,7 @@ export default function SignInPage() {
                 variant="outline" 
                 size="sm" 
                 onClick={() => {
-                  setEmail("demo@smartfarm.rw")
+                  setEmail("jean.nkurunziza@smartfarm.rw")
                   setPassword("demo123")
                 }}
                 disabled={loading}
